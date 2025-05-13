@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.cashflow.ui.screens.LoginScreen
 import com.example.cashflow.ui.theme.CashFlowTheme
 import com.example.cashflow.viewmodel.MainViewModel
 
@@ -33,10 +34,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CashFlowTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    LoginScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
