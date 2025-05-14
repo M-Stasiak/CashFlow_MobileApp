@@ -4,6 +4,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class LoginViewModel : ViewModel() {
 
@@ -13,8 +15,8 @@ class LoginViewModel : ViewModel() {
     var isPasswordVisible by mutableStateOf(false)
         private set
 
-    var loginStatus by mutableStateOf("")
-        private set
+    private val _loginStatus = MutableStateFlow(LoginStatus.Idle)
+    val loginStatus = _loginStatus.asStateFlow()
 
     fun onPasswordChange(newPassword: String) {
         password = newPassword
@@ -25,6 +27,8 @@ class LoginViewModel : ViewModel() {
     }
 
     fun login() {
-        loginStatus = if (password == "admin") "Zalogowano!" else "Błędne hasło"
+        _loginStatus.value = if (password == "admin") LoginStatus.Success else LoginStatus.WrongPassword
     }
 }
+
+enum class LoginStatus { Idle, Success, WrongPassword, Error}

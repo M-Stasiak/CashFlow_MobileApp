@@ -18,6 +18,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -27,14 +30,25 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cashflow.viewmodel.LoginStatus
 import com.example.cashflow.viewmodel.LoginViewModel
 
 @Preview(showBackground = true)
 @Composable
-fun LoginScreen(modifier: Modifier = Modifier, viewModel: LoginViewModel = viewModel()) {
+fun LoginScreen(
+    modifier: Modifier = Modifier,
+    viewModel: LoginViewModel = viewModel(),
+    onNavigateToHome: () -> Unit = {}
+) {
     val password = viewModel.password
     val isPasswordVisible = viewModel.isPasswordVisible
-    val loginStatus = viewModel.loginStatus
+    val loginStatus by viewModel.loginStatus.collectAsState()
+
+    LaunchedEffect(loginStatus) {
+        if (loginStatus == LoginStatus.Success) {
+            onNavigateToHome()
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -104,56 +118,13 @@ fun LoginScreen(modifier: Modifier = Modifier, viewModel: LoginViewModel = viewM
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                if (loginStatus.isNotEmpty()) {
+                if (loginStatus != LoginStatus.Idle) {
                     Text(
-                        text = loginStatus,
-                        color = if (loginStatus == "Zalogowano!") Color.Green else Color.Red
+                        text = if (loginStatus == LoginStatus.Success) "Zalogowano!" else "Błędne hasło",
+                        color = if (loginStatus == LoginStatus.Success) Color.Green else Color.Red
                     )
                 }
             }
         }
     }
 }
-/*fun LoginScreen() {
-    Surface(
-        color = Color.White,
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(28.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Column {
-                Text(
-                    text = "Dzień dobry!",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 40.dp),
-                    style = TextStyle(
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontStyle = FontStyle.Normal
-                    ),
-                    color = Color(0xFF1D1617),
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = "Zaloguj się do aplikacji.",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(),
-                    style = TextStyle(
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontStyle = FontStyle.Normal
-                    ),
-                    color = Color(0xFF1D1617),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-
-}*/

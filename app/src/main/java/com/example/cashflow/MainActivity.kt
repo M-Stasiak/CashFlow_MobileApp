@@ -13,7 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.cashflow.navigation.NavGraph
+import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.screens.LoginScreen
+import com.example.cashflow.ui.screens.RegisterScreen
 import com.example.cashflow.ui.theme.CashFlowTheme
 import com.example.cashflow.viewmodel.MainViewModel
 
@@ -33,9 +39,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CashFlowTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                val navController = rememberNavController()
+                NavGraph(navController)
+                /*Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     LoginScreen(modifier = Modifier.padding(innerPadding))
-                }
+                }*/
             }
         }
     }
