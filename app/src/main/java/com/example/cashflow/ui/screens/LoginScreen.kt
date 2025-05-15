@@ -2,6 +2,7 @@ package com.example.cashflow.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,7 +59,7 @@ fun LoginScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
+            Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Logo + Nazwa
@@ -105,7 +107,7 @@ fun LoginScreen(
                     Text("Nie pamiętasz hasła?")
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
                 Button(
                     onClick = { viewModel.login() },
@@ -124,6 +126,18 @@ fun LoginScreen(
                         color = if (loginStatus == LoginStatus.Success) Color.Green else Color.Red
                     )
                 }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Mateusz Stasiak",
+                    textAlign = TextAlign.Center
+                )
+                Text("Wersja 0.0.5")
+
             }
         }
     }

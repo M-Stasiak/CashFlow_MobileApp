@@ -9,4 +9,7 @@ sealed class NavRoute {
 
     @Serializable
     data object RegisterScreen : NavRoute()
+
+    @Serializable
+    data object HomeScreen : NavRoute()
 }
