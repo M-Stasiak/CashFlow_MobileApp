@@ -26,7 +26,6 @@ fun MainNavigation(navController: NavHostController) {
 
     // Ekrany z wyświetlanym BottomBar
     val bottomBarRoutes = listOf(
-        NavRoute.RegisterScreen::class.qualifiedName,
         NavRoute.HomeScreen::class.qualifiedName
     )
     val bottomBarVisibility = currentRoute in bottomBarRoutes
@@ -39,6 +38,12 @@ fun MainNavigation(navController: NavHostController) {
                     navController = navController,
                     items = listOf(
                         NavItem(
+                            title = "Home",
+                            selectedIcon = Icons.Default.Home,
+                            unselectedIcon = Icons.Default.HomeMax,
+                            route = NavRoute.HomeScreen
+                        ),
+                        NavItem(
                             title = "Logowanie",
                             selectedIcon = Icons.Default.Person,
                             unselectedIcon = Icons.Default.PersonOutline,
@@ -49,12 +54,6 @@ fun MainNavigation(navController: NavHostController) {
                             selectedIcon = Icons.Default.Home,
                             unselectedIcon = Icons.Default.HomeMax,
                             route = NavRoute.RegisterScreen
-                        ),
-                        NavItem(
-                            title = "Home",
-                            selectedIcon = Icons.Default.Home,
-                            unselectedIcon = Icons.Default.HomeMax,
-                            route = NavRoute.HomeScreen
                         )
                     )
                 )
