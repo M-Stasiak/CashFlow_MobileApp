@@ -10,7 +10,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.cashflow.navigation.MainNavigation
 import com.example.cashflow.ui.theme.CashFlowTheme
 import com.example.cashflow.viewmodel.MainViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val viewModel by viewModels<MainViewModel>()

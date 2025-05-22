@@ -15,7 +15,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.cashflow.ui.screens.HomeScreen
+import com.example.cashflow.ui.screens.home.HomeScreen
 import com.example.cashflow.ui.screens.LoginScreen
 import com.example.cashflow.ui.screens.RegisterScreen
 
