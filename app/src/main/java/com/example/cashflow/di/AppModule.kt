@@ -1,9 +1,12 @@
 package com.example.cashflow.di
 
 import android.content.Context
+import com.example.cashflow.data.AppSessionRepository
 import com.example.cashflow.data.local.AppDatabase
 import com.example.cashflow.data.local.dao.TransactionDao
+import com.example.cashflow.data.local.dao.UserDao
 import com.example.cashflow.data.repository.TransactionRepository
+import com.example.cashflow.data.repository.UserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,6 +25,16 @@ object AppModule {
     }
 
     @Provides
+    fun provideUserDao(appDatabase: AppDatabase) : UserDao {
+        return appDatabase.userDao()
+    }
+
+    @Provides
+    fun provideUserRepository(dao: UserDao) : UserRepository {
+        return UserRepository(dao)
+    }
+
+    @Provides
     fun provideTransactionDao(appDatabase: AppDatabase) : TransactionDao {
         return appDatabase.transactionDao()
     }
@@ -29,5 +42,11 @@ object AppModule {
     @Provides
     fun provideTransactionRepository(dao: TransactionDao) : TransactionRepository {
         return TransactionRepository(dao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAppSessionRepository() : AppSessionRepository {
+        return AppSessionRepository()
     }
 }

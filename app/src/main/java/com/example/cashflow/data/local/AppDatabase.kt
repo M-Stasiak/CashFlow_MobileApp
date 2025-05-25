@@ -5,16 +5,19 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.cashflow.data.local.dao.TransactionDao
+import com.example.cashflow.data.local.dao.UserDao
 import com.example.cashflow.data.local.model.TransactionEntity
+import com.example.cashflow.data.local.model.UserEntity
 
 @Database(
-    entities = [TransactionEntity::class],
+    entities = [UserEntity::class, TransactionEntity::class],
     version = 1,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun transactionDao(): TransactionDao
+    abstract fun userDao(): UserDao
 
     companion object {
         private const val DATABASE_NAME = "cashflow_database"

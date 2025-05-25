@@ -106,10 +106,10 @@ fun HomeScreenPreview() {
             animatedIncome = 100f,
             animatedExpense = 100f,
             transactions = listOf(
-                TransactionEntity(id = 1, title = "Groceries", amount = 45.99f, date = "2025-05-20"),
-                TransactionEntity(id = 2, title = "Netflix", amount = 29.99f, date = "2025-05-18"),
-                TransactionEntity(id = 3, title = "Salary", amount = 5000.00f, date = "2025-05-15"),
-                TransactionEntity(id = 4, title = "Coffee", amount = 12.50f, date = "2025-05-21")
+                TransactionEntity(id = 1, userId = 0, title = "Groceries", description = "Opis", amount = 45.99f, date = "2025-05-20"),
+                TransactionEntity(id = 2, userId = 0, title = "Netflix", description = "Opis", amount = 29.99f, date = "2025-05-18"),
+                TransactionEntity(id = 3, userId = 0, title = "Salary", description = "Opis", amount = 5000.00f, date = "2025-05-15"),
+                TransactionEntity(id = 4, userId = 0, title = "Coffee", description = "Opis", amount = 12.50f, date = "2025-05-21")
             ),
             onClickButton = { }
         )

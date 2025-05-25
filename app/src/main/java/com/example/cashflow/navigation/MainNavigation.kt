@@ -20,7 +20,7 @@ import com.example.cashflow.ui.screens.LoginScreen
 import com.example.cashflow.ui.screens.RegisterScreen
 
 @Composable
-fun MainNavigation(navController: NavHostController) {
+fun MainNavigation(navController: NavHostController, startDestination: NavRoute) {
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
 
@@ -60,18 +60,27 @@ fun MainNavigation(navController: NavHostController) {
             }
         }
     ) {
-        NavHost(navController = navController, startDestination = NavRoute.LoginScreen, modifier = Modifier.padding(it), builder = {
+        NavHost(navController = navController, startDestination = startDestination, modifier = Modifier.padding(it), builder = {
             composable<NavRoute.LoginScreen> {
                 LoginScreen(
                     onNavigateToHome = {
                         navController.navigate(NavRoute.HomeScreen) {
                             popUpTo(0) { inclusive = true }
                         }
+                    },
+                    onNavigateToRegister = {
+                        navController.navigate(NavRoute.RegisterScreen)
                     }
                 )
             }
             composable<NavRoute.RegisterScreen> {
-                RegisterScreen()
+                RegisterScreen(
+                    onNavigateToHome = {
+                        navController.navigate(NavRoute.HomeScreen) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
             }
             composable<NavRoute.HomeScreen> {
                 HomeScreen()

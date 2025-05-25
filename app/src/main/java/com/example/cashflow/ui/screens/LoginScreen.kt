@@ -1,5 +1,6 @@
 package com.example.cashflow.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -31,27 +33,68 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cashflow.ui.theme.CashFlowTheme
 import com.example.cashflow.viewmodel.LoginStatus
 import com.example.cashflow.viewmodel.LoginViewModel
+import com.example.cashflow.viewmodel.RegisterStatus
 
-@Preview(showBackground = true)
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = viewModel(),
-    onNavigateToHome: () -> Unit = {}
+    viewModel: LoginViewModel = hiltViewModel(),
+    onNavigateToHome: () -> Unit = {},
+    onNavigateToRegister: () -> Unit = {}
 ) {
-    val password = viewModel.password
-    val isPasswordVisible = viewModel.isPasswordVisible
+    val isLoginFieldVisible by viewModel.isLoginFieldVisible.collectAsState()
+    val login by viewModel.login.collectAsState()
+    val password by viewModel.password.collectAsState()
+    val isPasswordVisible by viewModel.isPasswordVisible.collectAsState()
     val loginStatus by viewModel.loginStatus.collectAsState()
 
     LaunchedEffect(loginStatus) {
-        if (loginStatus == LoginStatus.Success) {
-            onNavigateToHome()
+        when (loginStatus) {
+            LoginStatus.Success -> onNavigateToHome()
+            LoginStatus.CreateAccount -> onNavigateToRegister()
+            else -> { }
         }
     }
 
+    LoginScreenContent(
+        modifier = Modifier.fillMaxSize(),
+        isLoginFieldVisible = isLoginFieldVisible,
+        login = login,
+        password = password,
+        isPasswordVisible = isPasswordVisible,
+        loginStatus = loginStatus,
+        onLoginStatusChange = { viewModel.onLoginStatusChange(it) },
+        onLoginChange = { viewModel.onLoginChange(it) },
+        onPasswordChange = { viewModel.onPasswordChange(it) },
+        togglePasswordVisibility = { viewModel.togglePasswordVisibility() },
+        toggleLoginFieldVisibility = { viewModel.toggleLoginFieldVisibility() },
+        onLogin = { viewModel.login() },
+        onRegister = { viewModel.onLoginStatusChange(LoginStatus.CreateAccount) }
+    )
+}
+
+@Composable
+fun LoginScreenContent(
+    modifier: Modifier = Modifier,
+    isLoginFieldVisible: Boolean,
+    login: String,
+    password: String,
+    isPasswordVisible: Boolean,
+    loginStatus: LoginStatus,
+    onLoginStatusChange: (LoginStatus) -> Unit,
+    onLoginChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    togglePasswordVisibility: () -> Unit,
+    toggleLoginFieldVisibility: () -> Unit,
+    onLogin: () -> Unit,
+    onRegister: () -> Unit
+
+) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -59,7 +102,9 @@ fun LoginScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            Column(modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)) {
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Logo + Nazwa
@@ -85,15 +130,35 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
+                // Login
+                AnimatedVisibility(visible = isLoginFieldVisible) {
+                    Column {
+                        OutlinedTextField(
+                            value = login,
+                            onValueChange = { onLoginChange(it) },
+                            label = { Text("Login") },
+                            placeholder = { Text("Login") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
                 // Hasło
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { viewModel.onPasswordChange(it) },
+                    onValueChange = {
+                        onPasswordChange(it)
+                        if (loginStatus != LoginStatus.Idle) {
+                            onLoginStatusChange(LoginStatus.Idle)
+                        }
+                    },
                     label = { Text("Hasło") },
                     placeholder = { Text("Hasło") },
+                    isError = loginStatus == LoginStatus.WrongPassword,
                     visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
+                        IconButton(onClick = { togglePasswordVisibility() }) {
                             Icon(
                                 if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = "Pokaż/ukryj hasło"
@@ -103,14 +168,40 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                TextButton(onClick = { }) {
-                    Text("Nie pamiętasz hasła?")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(onClick = { onRegister() }) {
+                        Text("Utwórz konto")
+                    }
+
+                    TextButton(onClick = { toggleLoginFieldVisibility() }) {
+                        Text(if (isLoginFieldVisible) "Anuluj zmianę" else "Zmień konto")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (loginStatus != LoginStatus.Idle) {
+                    Text(
+                        text = when (loginStatus) {
+                            LoginStatus.WrongPassword -> "Błędne hasło"
+                            LoginStatus.Error -> "Wystąpił błąd"
+                            else -> ""
+                        },
+                        color = Color.Red,
+                        fontSize = 16.sp,
+                        modifier = Modifier
+                            .align(Alignment.Start)
+                            .padding(top = 4.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
 
                 Button(
-                    onClick = { viewModel.login() },
+                    onClick = { onLogin() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
@@ -119,13 +210,6 @@ fun LoginScreen(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                if (loginStatus != LoginStatus.Idle) {
-                    Text(
-                        text = if (loginStatus == LoginStatus.Success) "Zalogowano!" else "Błędne hasło",
-                        color = if (loginStatus == LoginStatus.Success) Color.Green else Color.Red
-                    )
-                }
             }
 
             Row(
@@ -140,5 +224,26 @@ fun LoginScreen(
 
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LoginScreenPreview() {
+    CashFlowTheme {
+        LoginScreenContent(
+            isLoginFieldVisible = true,
+            login = "login",
+            password = "password",
+            isPasswordVisible = true,
+            loginStatus = LoginStatus.WrongPassword,
+            onLoginStatusChange = { },
+            onLoginChange = { },
+            onPasswordChange = { },
+            togglePasswordVisibility = { },
+            toggleLoginFieldVisibility = { },
+            onLogin = { },
+            onRegister = { }
+        )
     }
 }

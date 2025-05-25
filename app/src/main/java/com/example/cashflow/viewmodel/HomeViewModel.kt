@@ -2,6 +2,7 @@ package com.example.cashflow.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cashflow.data.AppSessionRepository
 import com.example.cashflow.data.local.model.TransactionEntity
 import com.example.cashflow.data.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,7 +13,10 @@ import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val repository: TransactionRepository) : ViewModel() {
+class HomeViewModel @Inject constructor(
+    private val transactionRepository: TransactionRepository,
+    private val sessionRepository: AppSessionRepository
+) : ViewModel() {
 
     private val _balance = MutableStateFlow(0f)
     val balance = _balance.asStateFlow()
@@ -30,16 +34,17 @@ class HomeViewModel @Inject constructor(private val repository: TransactionRepos
     fun addTran() {
         viewModelScope.launch {
             val transaction = TransactionEntity(
-                id = null,
+                userId = 0,
                 title = "Losowa ${('A'..'Z').random()}",
+                description = "Opis",
                 amount = (1..500).random().toFloat(),
                 date = "siema"
             )
-            repository.addTransaction(transaction)
+            transactionRepository.addTransaction(transaction)
         }
     }
 
-    val transactions = repository.getLocalTransactions()
+    val transactions = transactionRepository.getLocalTransactions()
 
     private fun simulateBalanceChange() {
         viewModelScope.launch {
@@ -51,12 +56,13 @@ class HomeViewModel @Inject constructor(private val repository: TransactionRepos
     private fun addRandomTransaction() {
         viewModelScope.launch {
             val transaction = TransactionEntity(
-                id = null,
+                userId = 0,
                 title = "Losowa ${('A'..'Z').random()}",
+                description = "Opis",
                 amount = (1..500).random().toFloat(),
                 date = "siema"
             )
-            repository.addTransaction(transaction)
+            transactionRepository.addTransaction(transaction)
         }
     }
 
