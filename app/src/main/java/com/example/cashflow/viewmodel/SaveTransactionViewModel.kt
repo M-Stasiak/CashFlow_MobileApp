@@ -22,7 +22,7 @@ class SaveTransactionViewModel @Inject constructor(
     private val sessionRepository: AppSessionRepository
 ) : ViewModel() {
 
-    private val args: NavRoute.TransactionScreen = savedStateHandle.toRoute()
+    private val args: NavRoute.SaveTransactionScreen = savedStateHandle.toRoute()
 
     init {
         if (args.transactionId != null) loadTransaction(args.transactionId)

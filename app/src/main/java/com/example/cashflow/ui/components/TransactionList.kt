@@ -1,6 +1,7 @@
-package com.example.cashflow.ui.screens.home.components
+package com.example.cashflow.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,16 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.MonetizationOn
-import androidx.compose.material.icons.filled.Money
-import androidx.compose.material.icons.filled.ShoppingCartCheckout
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,29 +23,37 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.cashflow.data.local.model.TransactionEntity
 import com.example.cashflow.data.local.model.TransactionType
-import com.example.cashflow.ui.components.getTransactionCategoryUiByEnum
 import com.example.cashflow.util.formatDate
 import java.util.Locale
 
 @Composable
 fun TransactionList(
     modifier: Modifier = Modifier,
-    transactions: List<TransactionEntity>
+    transactions: List<TransactionEntity>,
+    onItemClick: (TransactionEntity) -> Unit
 ) {
+    val groupedTransactions = groupTransactionsByDate(transactions)
+
     LazyColumn(modifier = modifier.padding(horizontal = 0.dp)) {
-        items(transactions) { transaction ->
-            val transactionCategoryUi = getTransactionCategoryUiByEnum(transaction.category)
-            TransactionItem(
-                modifier = Modifier,
-                categoryName = transactionCategoryUi.title,
-                amount = transaction.amount,
-                type = transaction.type,
-                categoryIcon = transactionCategoryUi.icon,
-                date = formatDate(transaction.dateMillis)
-            )
+        groupedTransactions.forEach { (date, transactionsForDate) ->
+            item {
+                DateHeader(date = date)
+            }
+
+            items(transactionsForDate) { transaction ->
+                val transactionCategoryUi = getTransactionCategoryUiByEnum(transaction.category)
+                TransactionItem(
+                    modifier = Modifier,
+                    categoryName = transactionCategoryUi.title,
+                    amount = transaction.amount,
+                    type = transaction.type,
+                    categoryIcon = transactionCategoryUi.icon,
+                    date = formatDate(transaction.dateMillis),
+                    onClick = { onItemClick(transaction) }
+                )
+            }
         }
     }
 }
@@ -67,6 +66,7 @@ fun TransactionItem(
     type: TransactionType,
     categoryIcon: ImageVector,
     date: String,
+    onClick: () -> Unit
 ) {
     val iconColor = when (type) {
         TransactionType.INCOME -> Color(0xFF4CAF50) // zielony
@@ -76,6 +76,7 @@ fun TransactionItem(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(vertical = 8.dp, horizontal = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -110,4 +111,24 @@ fun TransactionItem(
             modifier = Modifier.align(Alignment.CenterEnd),
         )
     }
+}
+
+@Composable
+fun DateHeader(date: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFEFEFEF)) // jasnoszary pasek
+            .padding(vertical = 6.dp, horizontal = 16.dp)
+    ) {
+        Text(
+            text = date,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = Color.DarkGray
+        )
+    }
+}
+
+fun groupTransactionsByDate(transactions: List<TransactionEntity>): Map<String, List<TransactionEntity>> {
+    return transactions.groupBy { formatDate(it.dateMillis, "dd.MM.yyyy") }
 }

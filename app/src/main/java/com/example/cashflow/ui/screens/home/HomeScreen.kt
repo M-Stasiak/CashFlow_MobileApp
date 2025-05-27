@@ -1,7 +1,6 @@
 package com.example.cashflow.ui.screens.home
 
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -12,11 +11,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,7 +31,7 @@ import com.example.cashflow.data.local.model.TransactionEntity
 import com.example.cashflow.data.local.model.TransactionType
 import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.screens.home.components.CardItem
-import com.example.cashflow.ui.screens.home.components.TransactionList
+import com.example.cashflow.ui.components.TransactionList
 import com.example.cashflow.ui.theme.CashFlowTheme
 import com.example.cashflow.viewmodel.HomeViewModel
 
@@ -70,7 +67,8 @@ fun HomeScreen(
         animatedIncome = animatedIncome,
         animatedExpense = animatedExpense,
         transactions = transactions,
-        onAddTransaction = { navController.navigate(NavRoute.TransactionScreen(null)) }
+        onAddTransaction = { navController.navigate(NavRoute.SaveTransactionScreen(null)) },
+        onEditTransaction = { navController.navigate(NavRoute.SaveTransactionScreen(it.id)) }
     )
 }
 
@@ -81,7 +79,8 @@ fun HomeScreenContent(
     animatedIncome: Float,
     animatedExpense: Float,
     transactions: List<TransactionEntity>,
-    onAddTransaction: () -> Unit
+    onAddTransaction: () -> Unit,
+    onEditTransaction: (transaction: TransactionEntity) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier
@@ -99,7 +98,10 @@ fun HomeScreenContent(
 
             Text("Recent Transactions", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-            TransactionList(transactions = transactions)
+            TransactionList(
+                transactions = transactions,
+                onItemClick = { onEditTransaction(it)}
+            )
         }
 
         FloatingActionButton(
@@ -128,11 +130,12 @@ fun HomeScreenPreview() {
             animatedExpense = 100f,
             transactions = listOf(
                 TransactionEntity(id = 1, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 45.99f, type = TransactionType.INCOME, dateMillis = System.currentTimeMillis()),
-                TransactionEntity(id = 2, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 29.99f, type = TransactionType.EXPENSE, dateMillis = System.currentTimeMillis()),
+                TransactionEntity(id = 2, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 29.99f, type = TransactionType.EXPENSE, dateMillis = 2),
                 TransactionEntity(id = 3, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 5000.00f, type = TransactionType.EXPENSE, dateMillis = System.currentTimeMillis()),
                 TransactionEntity(id = 4, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 12.50f, type = TransactionType.INCOME, dateMillis = System.currentTimeMillis())
             ),
-            onAddTransaction = { }
+            onAddTransaction = { },
+            onEditTransaction = { }
         )
     }
 }

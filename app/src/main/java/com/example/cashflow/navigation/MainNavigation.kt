@@ -4,10 +4,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HomeMax
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonOutline
+import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -19,6 +21,7 @@ import com.example.cashflow.ui.screens.home.HomeScreen
 import com.example.cashflow.ui.screens.LoginScreen
 import com.example.cashflow.ui.screens.RegisterScreen
 import com.example.cashflow.ui.screens.SaveTransactionScreen
+import com.example.cashflow.ui.screens.TransactionsScreen
 
 @Composable
 fun MainNavigation(navController: NavHostController, startDestination: NavRoute) {
@@ -27,7 +30,8 @@ fun MainNavigation(navController: NavHostController, startDestination: NavRoute)
 
     // Ekrany z wyświetlanym BottomBar
     val bottomBarRoutes = listOf(
-        NavRoute.HomeScreen::class.qualifiedName
+        NavRoute.HomeScreen::class.qualifiedName,
+        NavRoute.TransactionsScreen::class.qualifiedName
     )
     val bottomBarVisibility = currentRoute in bottomBarRoutes
 
@@ -45,16 +49,10 @@ fun MainNavigation(navController: NavHostController, startDestination: NavRoute)
                             route = NavRoute.HomeScreen
                         ),
                         NavItem(
-                            title = "Logowanie",
-                            selectedIcon = Icons.Default.Person,
-                            unselectedIcon = Icons.Default.PersonOutline,
-                            route = NavRoute.LoginScreen
-                        ),
-                        NavItem(
-                            title = "Rejestracja",
-                            selectedIcon = Icons.Default.Home,
-                            unselectedIcon = Icons.Default.HomeMax,
-                            route = NavRoute.RegisterScreen
+                            title = "Transactions",
+                            selectedIcon = Icons.Filled.FilterList,
+                            unselectedIcon = Icons.Outlined.FilterList,
+                            route = NavRoute.TransactionsScreen
                         )
                     )
                 )
@@ -71,7 +69,10 @@ fun MainNavigation(navController: NavHostController, startDestination: NavRoute)
             composable<NavRoute.HomeScreen> {
                 HomeScreen(navController = navController)
             }
-            composable<NavRoute.TransactionScreen> {
+            composable<NavRoute.TransactionsScreen> {
+                TransactionsScreen(navController = navController)
+            }
+            composable<NavRoute.SaveTransactionScreen> {
                 SaveTransactionScreen(navController = navController)
             }
         })
