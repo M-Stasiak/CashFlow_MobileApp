@@ -1,27 +1,38 @@
 package com.example.cashflow.ui.screens.home
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
+import com.example.cashflow.data.local.model.TransactionCategory
 import com.example.cashflow.data.local.model.TransactionEntity
+import com.example.cashflow.data.local.model.TransactionType
+import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.screens.home.components.CardItem
 import com.example.cashflow.ui.screens.home.components.TransactionList
 import com.example.cashflow.ui.theme.CashFlowTheme
@@ -30,25 +41,26 @@ import com.example.cashflow.viewmodel.HomeViewModel
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    navController: NavHostController,
 ) {
     val transactions by viewModel.transactions.collectAsState(initial = emptyList())
-    val balance by viewModel.balance.collectAsState()
-    val income by viewModel.income.collectAsState()
-    val expense by viewModel.expense.collectAsState()
+    val balance by viewModel.balance.collectAsState(initial = 0f)
+    val income by viewModel.income.collectAsState(initial = 0f)
+    val expense by viewModel.expense.collectAsState(initial = 0f)
     val animatedBalance by animateFloatAsState(
         targetValue = balance,
-        animationSpec = tween(durationMillis = 1000, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = 1000, delayMillis = 500, easing = FastOutSlowInEasing),
         label = "BalanceAnimation"
     )
     val animatedIncome by animateFloatAsState(
         targetValue = income,
-        animationSpec = tween(durationMillis = 1000, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = 1000, delayMillis = 500, easing = FastOutSlowInEasing),
         label = "IncomeAnimation"
     )
     val animatedExpense by animateFloatAsState(
         targetValue = expense,
-        animationSpec = tween(durationMillis = 1000, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = 1000, delayMillis = 500, easing = FastOutSlowInEasing),
         label = "ExpenseAnimation"
     )
 
@@ -58,7 +70,7 @@ fun HomeScreen(
         animatedIncome = animatedIncome,
         animatedExpense = animatedExpense,
         transactions = transactions,
-        onClickButton = { viewModel.addTran() }
+        onAddTransaction = { navController.navigate(NavRoute.TransactionScreen(null)) }
     )
 }
 
@@ -69,9 +81,9 @@ fun HomeScreenContent(
     animatedIncome: Float,
     animatedExpense: Float,
     transactions: List<TransactionEntity>,
-    onClickButton: () -> Unit
+    onAddTransaction: () -> Unit
 ) {
-    Surface(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
@@ -84,15 +96,24 @@ fun HomeScreenContent(
                 income = animatedIncome,
                 expense = animatedExpense
             )
-            Button(
-                onClick = onClickButton
-            ) {
-                Text("Siema")
-            }
 
             Text("Recent Transactions", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             TransactionList(transactions = transactions)
+        }
+
+        FloatingActionButton(
+            onClick = { onAddTransaction() },
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Dodaj transakcję"
+            )
         }
     }
 }
@@ -106,12 +127,12 @@ fun HomeScreenPreview() {
             animatedIncome = 100f,
             animatedExpense = 100f,
             transactions = listOf(
-                TransactionEntity(id = 1, userId = 0, title = "Groceries", description = "Opis", amount = 45.99f, date = "2025-05-20"),
-                TransactionEntity(id = 2, userId = 0, title = "Netflix", description = "Opis", amount = 29.99f, date = "2025-05-18"),
-                TransactionEntity(id = 3, userId = 0, title = "Salary", description = "Opis", amount = 5000.00f, date = "2025-05-15"),
-                TransactionEntity(id = 4, userId = 0, title = "Coffee", description = "Opis", amount = 12.50f, date = "2025-05-21")
+                TransactionEntity(id = 1, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 45.99f, type = TransactionType.INCOME, dateMillis = System.currentTimeMillis()),
+                TransactionEntity(id = 2, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 29.99f, type = TransactionType.EXPENSE, dateMillis = System.currentTimeMillis()),
+                TransactionEntity(id = 3, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 5000.00f, type = TransactionType.EXPENSE, dateMillis = System.currentTimeMillis()),
+                TransactionEntity(id = 4, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 12.50f, type = TransactionType.INCOME, dateMillis = System.currentTimeMillis())
             ),
-            onClickButton = { }
+            onAddTransaction = { }
         )
     }
 }

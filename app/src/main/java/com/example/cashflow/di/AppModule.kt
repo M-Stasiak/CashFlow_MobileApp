@@ -1,6 +1,10 @@
 package com.example.cashflow.di
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import com.example.cashflow.data.AppSessionRepository
 import com.example.cashflow.data.local.AppDatabase
 import com.example.cashflow.data.local.dao.TransactionDao
@@ -17,6 +21,14 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun provideDataStore(@ApplicationContext context: Context) : DataStore<Preferences> {
+        return PreferenceDataStoreFactory.create {
+            context.preferencesDataStoreFile("cashflow_preferences")
+        }
+    }
 
     @Provides
     @Singleton
@@ -46,7 +58,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAppSessionRepository() : AppSessionRepository {
-        return AppSessionRepository()
+    fun provideAppSessionRepository(dataStore: DataStore<Preferences>) : AppSessionRepository {
+        return AppSessionRepository(dataStore)
     }
 }

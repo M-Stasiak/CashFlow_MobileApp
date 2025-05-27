@@ -12,4 +12,7 @@ sealed class NavRoute {
 
     @Serializable
     data object HomeScreen : NavRoute()
+
+    @Serializable
+    data class TransactionScreen(val transactionId: Long?) : NavRoute()
 }

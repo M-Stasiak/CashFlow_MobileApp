@@ -18,6 +18,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.cashflow.ui.screens.home.HomeScreen
 import com.example.cashflow.ui.screens.LoginScreen
 import com.example.cashflow.ui.screens.RegisterScreen
+import com.example.cashflow.ui.screens.SaveTransactionScreen
 
 @Composable
 fun MainNavigation(navController: NavHostController, startDestination: NavRoute) {
@@ -62,28 +63,16 @@ fun MainNavigation(navController: NavHostController, startDestination: NavRoute)
     ) {
         NavHost(navController = navController, startDestination = startDestination, modifier = Modifier.padding(it), builder = {
             composable<NavRoute.LoginScreen> {
-                LoginScreen(
-                    onNavigateToHome = {
-                        navController.navigate(NavRoute.HomeScreen) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    },
-                    onNavigateToRegister = {
-                        navController.navigate(NavRoute.RegisterScreen)
-                    }
-                )
+                LoginScreen(navController = navController)
             }
             composable<NavRoute.RegisterScreen> {
-                RegisterScreen(
-                    onNavigateToHome = {
-                        navController.navigate(NavRoute.HomeScreen) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
-                )
+                RegisterScreen(navController = navController)
             }
             composable<NavRoute.HomeScreen> {
-                HomeScreen()
+                HomeScreen(navController = navController)
+            }
+            composable<NavRoute.TransactionScreen> {
+                SaveTransactionScreen(navController = navController)
             }
         })
     }

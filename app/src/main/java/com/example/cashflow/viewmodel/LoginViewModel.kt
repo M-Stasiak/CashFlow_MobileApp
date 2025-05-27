@@ -1,16 +1,14 @@
 package com.example.cashflow.viewmodel
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cashflow.data.AppSessionRepository
 import com.example.cashflow.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,6 +17,11 @@ class LoginViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val sessionRepository: AppSessionRepository
 ) : ViewModel() {
+
+    private var userLogin = ""
+
+    private val _isLastLoggedUser = MutableStateFlow(false)
+    val isLastLoggedUser = _isLastLoggedUser.asStateFlow()
 
     private val _isLoginFieldVisible = MutableStateFlow(false)
     val isLoginFieldVisible = _isLoginFieldVisible.asStateFlow()
@@ -57,7 +60,9 @@ class LoginViewModel @Inject constructor(
 
     fun login() {
         viewModelScope.launch {
-            val user = userRepository.loginUser(login = _login.value, password = _password.value)
+            var login = _login.value
+            if (_isLastLoggedUser.value and !_isLoginFieldVisible.value) login = userLogin
+            val user = userRepository.loginUser(login = login, password = _password.value)
             if (user != null) {
                 sessionRepository.setCurrentUser(user)
                 _loginStatus.value = LoginStatus.Success
@@ -65,6 +70,22 @@ class LoginViewModel @Inject constructor(
             else {
                 _loginStatus.value = LoginStatus.WrongPassword
             }
+        }
+    }
+
+    init {
+        viewModelScope.launch {
+            sessionRepository.lastLoggedUserId
+                .filterNotNull()
+                .firstOrNull()?.let { id ->
+                    val userLoginPom = userRepository.getUserLoginById(id)
+                    if (userLoginPom != null) {
+                        userLogin = userLoginPom
+                        _isLastLoggedUser.value = true
+                        return@launch
+                    }
+                }
+            _isLoginFieldVisible.value = true
         }
     }
 }

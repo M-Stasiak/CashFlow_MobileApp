@@ -11,6 +11,8 @@ class UserRepository @Inject constructor(
 ) {
     fun getAllUsers(): Flow<List<UserEntity>> = dao.getAllUsers()
 
+    suspend fun getUserLoginById(id: Long): String? = dao.getUserLoginById(id)
+
     suspend fun registerUser(name: String, login: String, password: String): Boolean {
         val existing = dao.getUserByLogin(login)
         if (existing != null) return false

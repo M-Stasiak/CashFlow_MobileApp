@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.theme.CashFlowTheme
 import com.example.cashflow.viewmodel.LoginStatus
 import com.example.cashflow.viewmodel.LoginViewModel
@@ -44,9 +46,9 @@ import com.example.cashflow.viewmodel.RegisterStatus
 fun LoginScreen(
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = hiltViewModel(),
-    onNavigateToHome: () -> Unit = {},
-    onNavigateToRegister: () -> Unit = {}
+    navController: NavHostController,
 ) {
+    val isLastLoggedUser by viewModel.isLastLoggedUser.collectAsState()
     val isLoginFieldVisible by viewModel.isLoginFieldVisible.collectAsState()
     val login by viewModel.login.collectAsState()
     val password by viewModel.password.collectAsState()
@@ -55,14 +57,15 @@ fun LoginScreen(
 
     LaunchedEffect(loginStatus) {
         when (loginStatus) {
-            LoginStatus.Success -> onNavigateToHome()
-            LoginStatus.CreateAccount -> onNavigateToRegister()
+            LoginStatus.Success -> navController.navigate(NavRoute.HomeScreen)
+            LoginStatus.CreateAccount -> navController.navigate(NavRoute.RegisterScreen)
             else -> { }
         }
     }
 
     LoginScreenContent(
         modifier = Modifier.fillMaxSize(),
+        isLastLoggedUser = isLastLoggedUser,
         isLoginFieldVisible = isLoginFieldVisible,
         login = login,
         password = password,
@@ -81,6 +84,7 @@ fun LoginScreen(
 @Composable
 fun LoginScreenContent(
     modifier: Modifier = Modifier,
+    isLastLoggedUser: Boolean,
     isLoginFieldVisible: Boolean,
     login: String,
     password: String,
@@ -175,9 +179,10 @@ fun LoginScreenContent(
                     TextButton(onClick = { onRegister() }) {
                         Text("Utwórz konto")
                     }
-
-                    TextButton(onClick = { toggleLoginFieldVisibility() }) {
-                        Text(if (isLoginFieldVisible) "Anuluj zmianę" else "Zmień konto")
+                    if (isLastLoggedUser) {
+                        TextButton(onClick = { toggleLoginFieldVisibility() }) {
+                            Text(if (isLoginFieldVisible) "Anuluj zmianę" else "Zmień konto")
+                        }
                     }
                 }
 
@@ -232,6 +237,7 @@ fun LoginScreenContent(
 fun LoginScreenPreview() {
     CashFlowTheme {
         LoginScreenContent(
+            isLastLoggedUser = true,
             isLoginFieldVisible = true,
             login = "login",
             password = "password",

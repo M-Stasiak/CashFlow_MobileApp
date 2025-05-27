@@ -1,5 +1,6 @@
 package com.example.cashflow.ui.screens.home.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,11 +8,22 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Money
+import androidx.compose.material.icons.filled.ShoppingCartCheckout
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,6 +34,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cashflow.data.local.model.TransactionEntity
+import com.example.cashflow.data.local.model.TransactionType
+import com.example.cashflow.ui.components.getTransactionCategoryUiByEnum
+import com.example.cashflow.util.formatDate
 import java.util.Locale
 
 @Composable
@@ -31,12 +46,14 @@ fun TransactionList(
 ) {
     LazyColumn(modifier = modifier.padding(horizontal = 0.dp)) {
         items(transactions) { transaction ->
+            val transactionCategoryUi = getTransactionCategoryUiByEnum(transaction.category)
             TransactionItem(
                 modifier = Modifier,
-                title = transaction.title,
+                categoryName = transactionCategoryUi.title,
                 amount = transaction.amount,
-                icon = Icons.Filled.MonetizationOn,
-                date = transaction.date
+                type = transaction.type,
+                categoryIcon = transactionCategoryUi.icon,
+                date = formatDate(transaction.dateMillis)
             )
         }
     }
@@ -45,36 +62,52 @@ fun TransactionList(
 @Composable
 fun TransactionItem(
     modifier: Modifier = Modifier,
-    title: String,
+    categoryName: String,
     amount: Float,
-    icon: ImageVector,
+    type: TransactionType,
+    categoryIcon: ImageVector,
     date: String,
 ) {
+    val iconColor = when (type) {
+        TransactionType.INCOME -> Color(0xFF4CAF50) // zielony
+        TransactionType.EXPENSE -> Color(0xFFF44336) // czerwony
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 8.dp, horizontal = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                imageVector = icon,
+                imageVector = categoryIcon,
                 contentDescription = null,
-                modifier = Modifier.size(51.dp)
+                tint = iconColor,
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(iconColor.copy(alpha = 0.1f), shape = CircleShape)
+                    .padding(6.dp)
             )
-            Spacer(modifier = Modifier.size(8.dp))
-            Column {
-                Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                Spacer(modifier = Modifier.size(6.dp))
-                Text(text = date, fontSize = 13.sp, color = Color.LightGray)
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = categoryName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = date,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
         Text(
-            text = if (amount >= 0f) "+$${String.format(Locale.US, "%.2f", kotlin.math.abs(amount))}" else "-$${String.format(
-                Locale.US, "%.2f", kotlin.math.abs(amount))}",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
+            text = (if (type == TransactionType.INCOME) "+ " else "- ") + String.format(Locale.US, "%.2f", amount) + " zł",
+            style = MaterialTheme.typography.bodyLarge,
+            color = iconColor,
             modifier = Modifier.align(Alignment.CenterEnd),
-            color = if (amount >= 0f) Color(0xFF4CAF50) else Color(0xFFFA6C61)
         )
     }
 }

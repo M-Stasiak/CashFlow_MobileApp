@@ -36,6 +36,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
+import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.theme.CashFlowTheme
 import com.example.cashflow.viewmodel.LoginStatus
 import com.example.cashflow.viewmodel.RegisterStatus
@@ -45,7 +47,7 @@ import com.example.cashflow.viewmodel.RegisterViewModel
 fun RegisterScreen(
     modifier: Modifier = Modifier,
     viewModel: RegisterViewModel = hiltViewModel(),
-    onNavigateToHome: () -> Unit = {}
+    navController: NavHostController,
 ) {
     val name by viewModel.name.collectAsState()
     val login by viewModel.login.collectAsState()
@@ -57,7 +59,7 @@ fun RegisterScreen(
 
     LaunchedEffect(registerStatus) {
         if (registerStatus == RegisterStatus.Success) {
-            onNavigateToHome()
+            navController.navigate(NavRoute.HomeScreen)
         }
     }
     

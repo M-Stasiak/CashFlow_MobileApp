@@ -7,8 +7,13 @@ import androidx.room.PrimaryKey
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val userId: Long,
-    val title: String,
+    val category: TransactionCategory,
     val description: String,
     val amount: Float,
-    val date: String
+    val type: TransactionType,
+    val dateMillis: Long
 )
+
+enum class TransactionType { INCOME, EXPENSE }
+
+enum class TransactionCategory { GROCERIES, RENT, TRANSPORT, ENTERTAINMENT, SALARY, FREELANCE, TRANSFER }
