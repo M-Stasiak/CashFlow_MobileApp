@@ -1,4 +1,4 @@
-package com.example.cashflow.ui.screens
+package com.example.cashflow.ui.screens.login
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,13 +37,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.cashflow.navigation.NavRoute
+import com.example.cashflow.ui.core.CommonUiEvent
 import com.example.cashflow.ui.theme.CashFlowTheme
-import com.example.cashflow.viewmodel.LoginStatus
-import com.example.cashflow.viewmodel.LoginViewModel
-import com.example.cashflow.viewmodel.RegisterStatus
 
 @Composable
 fun LoginScreen(
@@ -54,6 +54,7 @@ fun LoginScreen(
     val password by viewModel.password.collectAsState()
     val isPasswordVisible by viewModel.isPasswordVisible.collectAsState()
     val loginStatus by viewModel.loginStatus.collectAsState()
+    //val errorMessage by viewModel.errorMessage.collectAsState()
 
     LaunchedEffect(loginStatus) {
         when (loginStatus) {
@@ -63,8 +64,20 @@ fun LoginScreen(
         }
     }
 
+    /*LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is LoginUiEvent.LoggedSuccessfully -> { navController.navigate(NavRoute.HomeScreen) }
+                is CommonUiEvent.NavigateToRegister -> { navController.navigate(NavRoute.RegisterScreen) }
+                is LoginUiEvent.WrongPassword -> { viewModel.setErrorMessage("Błędne hasło") }
+                is CommonUiEvent.ShowGenericError -> {}
+            }
+        }
+    }*/
+
     LoginScreenContent(
         modifier = Modifier.fillMaxSize(),
+        //errorMessage = errorMessage,
         isLastLoggedUser = isLastLoggedUser,
         isLoginFieldVisible = isLoginFieldVisible,
         login = login,
@@ -72,18 +85,20 @@ fun LoginScreen(
         isPasswordVisible = isPasswordVisible,
         loginStatus = loginStatus,
         onLoginStatusChange = { viewModel.onLoginStatusChange(it) },
+        //setErrorMessage = { viewModel.setErrorMessage(it) },
         onLoginChange = { viewModel.onLoginChange(it) },
         onPasswordChange = { viewModel.onPasswordChange(it) },
         togglePasswordVisibility = { viewModel.togglePasswordVisibility() },
         toggleLoginFieldVisibility = { viewModel.toggleLoginFieldVisibility() },
-        onLogin = { viewModel.login() },
-        onRegister = { viewModel.onLoginStatusChange(LoginStatus.CreateAccount) }
+        onLoginClick = { viewModel.onLoginClick() },
+        onCreateNewAccountClick = { viewModel.onCreateNewAccountClick() }
     )
 }
 
 @Composable
 fun LoginScreenContent(
     modifier: Modifier = Modifier,
+    //errorMessage: String?,
     isLastLoggedUser: Boolean,
     isLoginFieldVisible: Boolean,
     login: String,
@@ -91,12 +106,13 @@ fun LoginScreenContent(
     isPasswordVisible: Boolean,
     loginStatus: LoginStatus,
     onLoginStatusChange: (LoginStatus) -> Unit,
+    //setErrorMessage: (String?) -> Unit,
     onLoginChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     togglePasswordVisibility: () -> Unit,
     toggleLoginFieldVisibility: () -> Unit,
-    onLogin: () -> Unit,
-    onRegister: () -> Unit
+    onLoginClick: () -> Unit,
+    onCreateNewAccountClick: () -> Unit
 
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -153,13 +169,14 @@ fun LoginScreenContent(
                     value = password,
                     onValueChange = {
                         onPasswordChange(it)
+                        //setErrorMessage(null)
                         if (loginStatus != LoginStatus.Idle) {
                             onLoginStatusChange(LoginStatus.Idle)
                         }
                     },
                     label = { Text("Hasło") },
                     placeholder = { Text("Hasło") },
-                    isError = loginStatus == LoginStatus.WrongPassword,
+                    isError = loginStatus == LoginStatus.WrongPassword,//errorMessage != null,
                     visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { togglePasswordVisibility() }) {
@@ -176,7 +193,7 @@ fun LoginScreenContent(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TextButton(onClick = { onRegister() }) {
+                    TextButton(onClick = { onCreateNewAccountClick() }) {
                         Text("Utwórz konto")
                     }
                     if (isLastLoggedUser) {
@@ -187,6 +204,17 @@ fun LoginScreenContent(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                /*if (errorMessage != null) {
+                    Text(
+                        text = errorMessage,
+                        color = Color.Red,
+                        fontSize = 16.sp,
+                        modifier = Modifier
+                            .align(Alignment.Start)
+                            .padding(top = 4.dp)
+                    )
+                }*/
 
                 if (loginStatus != LoginStatus.Idle) {
                     Text(
@@ -206,7 +234,7 @@ fun LoginScreenContent(
                 Spacer(modifier = Modifier.weight(1f))
 
                 Button(
-                    onClick = { onLogin() },
+                    onClick = { onLoginClick() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
@@ -237,6 +265,7 @@ fun LoginScreenContent(
 fun LoginScreenPreview() {
     CashFlowTheme {
         LoginScreenContent(
+            //errorMessage = null,
             isLastLoggedUser = true,
             isLoginFieldVisible = true,
             login = "login",
@@ -244,12 +273,13 @@ fun LoginScreenPreview() {
             isPasswordVisible = true,
             loginStatus = LoginStatus.WrongPassword,
             onLoginStatusChange = { },
+            //setErrorMessage = { },
             onLoginChange = { },
             onPasswordChange = { },
             togglePasswordVisibility = { },
             toggleLoginFieldVisibility = { },
-            onLogin = { },
-            onRegister = { }
+            onLoginClick = { },
+            onCreateNewAccountClick = { }
         )
     }
 }

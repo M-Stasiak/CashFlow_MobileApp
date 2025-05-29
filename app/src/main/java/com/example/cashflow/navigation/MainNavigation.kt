@@ -7,8 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HomeMax
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -18,10 +16,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.cashflow.ui.screens.home.HomeScreen
-import com.example.cashflow.ui.screens.LoginScreen
-import com.example.cashflow.ui.screens.RegisterScreen
-import com.example.cashflow.ui.screens.SaveTransactionScreen
-import com.example.cashflow.ui.screens.TransactionsScreen
+import com.example.cashflow.ui.screens.login.LoginScreen
+import com.example.cashflow.ui.screens.register.RegisterScreen
+import com.example.cashflow.ui.screens.save_transaction.SaveTransactionScreen
+import com.example.cashflow.ui.screens.transactions.TransactionsScreen
 
 @Composable
 fun MainNavigation(navController: NavHostController, startDestination: NavRoute) {

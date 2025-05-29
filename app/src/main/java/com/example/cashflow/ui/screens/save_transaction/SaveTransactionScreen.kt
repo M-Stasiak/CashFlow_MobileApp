@@ -1,4 +1,4 @@
-package com.example.cashflow.ui.screens
+package com.example.cashflow.ui.screens.save_transaction
 
 import android.app.DatePickerDialog
 import android.widget.DatePicker
@@ -36,7 +36,6 @@ import com.example.cashflow.data.local.model.TransactionType
 import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.components.getTransactionCategoryUiByEnum
 import com.example.cashflow.util.formatDate
-import com.example.cashflow.viewmodel.SaveTransactionViewModel
 import java.util.*
 
 @Composable

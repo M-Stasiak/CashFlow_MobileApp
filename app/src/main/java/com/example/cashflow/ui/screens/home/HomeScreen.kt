@@ -33,7 +33,6 @@ import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.screens.home.components.CardItem
 import com.example.cashflow.ui.components.TransactionList
 import com.example.cashflow.ui.theme.CashFlowTheme
-import com.example.cashflow.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(

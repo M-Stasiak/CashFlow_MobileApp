@@ -1,4 +1,4 @@
-package com.example.cashflow.viewmodel
+package com.example.cashflow.ui.screens.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

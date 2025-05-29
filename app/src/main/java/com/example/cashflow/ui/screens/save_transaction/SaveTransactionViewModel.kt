@@ -1,4 +1,4 @@
-package com.example.cashflow.viewmodel
+package com.example.cashflow.ui.screens.save_transaction
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel

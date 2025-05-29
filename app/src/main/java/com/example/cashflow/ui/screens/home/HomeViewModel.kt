@@ -1,4 +1,4 @@
-package com.example.cashflow.viewmodel
+package com.example.cashflow.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,18 +23,4 @@ class HomeViewModel @Inject constructor(
     val balance = transactionRepository.getAccountBalance(user)
     val income = transactionRepository.getTotalIncome(user)
     val expense = transactionRepository.getTotalExpense(user)
-
-    fun addTran() {
-        viewModelScope.launch {
-            val transaction = TransactionEntity(
-                userId = user.id,
-                category = TransactionCategory.TRANSFER,
-                description = "Opis",
-                amount = (1..500).random().toFloat(),
-                type = TransactionType.INCOME,
-                dateMillis = System.currentTimeMillis()
-            )
-            transactionRepository.insertTransaction(transaction)
-        }
-    }
 }

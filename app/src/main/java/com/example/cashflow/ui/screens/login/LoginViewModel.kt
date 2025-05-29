@@ -1,11 +1,15 @@
-package com.example.cashflow.viewmodel
+package com.example.cashflow.ui.screens.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cashflow.data.AppSessionRepository
 import com.example.cashflow.data.repository.UserRepository
+import com.example.cashflow.ui.core.AppUiEvent
+import com.example.cashflow.ui.core.CommonUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
@@ -17,6 +21,12 @@ class LoginViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val sessionRepository: AppSessionRepository
 ) : ViewModel() {
+
+    private val _uiEvent = MutableSharedFlow<AppUiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage = _errorMessage.asStateFlow()
 
     private var userLogin = ""
 
@@ -42,6 +52,10 @@ class LoginViewModel @Inject constructor(
         _loginStatus.value = newLoginStatus
     }
 
+    fun setErrorMessage(errorMessage: String?) {
+        _errorMessage.value = errorMessage
+    }
+
     fun onLoginChange(newLogin: String) {
         _login.value = newLogin
     }
@@ -50,12 +64,23 @@ class LoginViewModel @Inject constructor(
         _password.value = newPassword
     }
 
+    fun toggleLoginFieldVisibility() {
+        _isLoginFieldVisible.value = !_isLoginFieldVisible.value
+    }
+
     fun togglePasswordVisibility() {
         _isPasswordVisible.value = !_isPasswordVisible.value
     }
 
-    fun toggleLoginFieldVisibility() {
-        _isLoginFieldVisible.value = !_isLoginFieldVisible.value
+    fun onLoginClick() {
+        login()
+    }
+
+    fun onCreateNewAccountClick() {
+        viewModelScope.launch {
+            _uiEvent.emit(CommonUiEvent.NavigateToRegister)
+            _loginStatus.value = LoginStatus.CreateAccount
+        }
     }
 
     fun login() {
@@ -66,9 +91,11 @@ class LoginViewModel @Inject constructor(
             if (user != null) {
                 sessionRepository.setCurrentUser(user)
                 _loginStatus.value = LoginStatus.Success
+                _uiEvent.emit(LoginUiEvent.LoggedSuccessfully)
             }
             else {
                 _loginStatus.value = LoginStatus.WrongPassword
+                _uiEvent.emit(LoginUiEvent.WrongPassword)
             }
         }
     }
