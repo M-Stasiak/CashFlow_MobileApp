@@ -48,71 +48,35 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
     navController: NavHostController,
 ) {
-    val isLastLoggedUser by viewModel.isLastLoggedUser.collectAsState()
-    val isLoginFieldVisible by viewModel.isLoginFieldVisible.collectAsState()
-    val login by viewModel.login.collectAsState()
-    val password by viewModel.password.collectAsState()
-    val isPasswordVisible by viewModel.isPasswordVisible.collectAsState()
-    val loginStatus by viewModel.loginStatus.collectAsState()
-    //val errorMessage by viewModel.errorMessage.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(loginStatus) {
-        when (loginStatus) {
-            LoginStatus.Success -> navController.navigate(NavRoute.HomeScreen)
-            LoginStatus.CreateAccount -> navController.navigate(NavRoute.RegisterScreen)
-            else -> { }
-        }
-    }
-
-    /*LaunchedEffect(Unit) {
+    LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
                 is LoginUiEvent.LoggedSuccessfully -> { navController.navigate(NavRoute.HomeScreen) }
                 is CommonUiEvent.NavigateToRegister -> { navController.navigate(NavRoute.RegisterScreen) }
-                is LoginUiEvent.WrongPassword -> { viewModel.setErrorMessage("Błędne hasło") }
-                is CommonUiEvent.ShowGenericError -> {}
             }
         }
-    }*/
+    }
 
     LoginScreenContent(
-        modifier = Modifier.fillMaxSize(),
-        //errorMessage = errorMessage,
-        isLastLoggedUser = isLastLoggedUser,
-        isLoginFieldVisible = isLoginFieldVisible,
-        login = login,
-        password = password,
-        isPasswordVisible = isPasswordVisible,
-        loginStatus = loginStatus,
-        onLoginStatusChange = { viewModel.onLoginStatusChange(it) },
-        //setErrorMessage = { viewModel.setErrorMessage(it) },
-        onLoginChange = { viewModel.onLoginChange(it) },
-        onPasswordChange = { viewModel.onPasswordChange(it) },
-        togglePasswordVisibility = { viewModel.togglePasswordVisibility() },
-        toggleLoginFieldVisibility = { viewModel.toggleLoginFieldVisibility() },
-        onLoginClick = { viewModel.onLoginClick() },
-        onCreateNewAccountClick = { viewModel.onCreateNewAccountClick() }
+        state = uiState,
+        callbacks = LoginUiCallbacks(
+            onLoginChange = { viewModel.onLoginChange(it) },
+            onPasswordChange = { viewModel.onPasswordChange(it) },
+            toggleLoginFieldVisibility = { viewModel.toggleLoginFieldVisibility() },
+            togglePasswordVisibility = { viewModel.togglePasswordVisibility() },
+            onLoginClick = { viewModel.onLoginClick() },
+            onCreateNewAccountClick = { viewModel.onCreateNewAccountClick() }
+        )
     )
 }
 
 @Composable
 fun LoginScreenContent(
     modifier: Modifier = Modifier,
-    //errorMessage: String?,
-    isLastLoggedUser: Boolean,
-    isLoginFieldVisible: Boolean,
-    login: String,
-    password: String,
-    isPasswordVisible: Boolean,
-    loginStatus: LoginStatus,
-    onLoginStatusChange: (LoginStatus) -> Unit,
-    //setErrorMessage: (String?) -> Unit,
-    onLoginChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit,
-    togglePasswordVisibility: () -> Unit,
-    toggleLoginFieldVisibility: () -> Unit,
-    onLoginClick: () -> Unit,
-    onCreateNewAccountClick: () -> Unit
+    state: LoginUiState,
+    callbacks: LoginUiCallbacks
 
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -151,13 +115,14 @@ fun LoginScreenContent(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Login
-                AnimatedVisibility(visible = isLoginFieldVisible) {
+                AnimatedVisibility(visible = state.isLoginFieldVisible) {
                     Column {
                         OutlinedTextField(
-                            value = login,
-                            onValueChange = { onLoginChange(it) },
+                            value = state.login,
+                            onValueChange = { callbacks.onLoginChange(it) },
                             label = { Text("Login") },
                             placeholder = { Text("Login") },
+                            isError = state.fieldErrors.containsKey(LoginErrorField.Login),
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -166,22 +131,16 @@ fun LoginScreenContent(
 
                 // Hasło
                 OutlinedTextField(
-                    value = password,
-                    onValueChange = {
-                        onPasswordChange(it)
-                        //setErrorMessage(null)
-                        if (loginStatus != LoginStatus.Idle) {
-                            onLoginStatusChange(LoginStatus.Idle)
-                        }
-                    },
+                    value = state.password,
+                    onValueChange = { callbacks.onPasswordChange(it) },
                     label = { Text("Hasło") },
                     placeholder = { Text("Hasło") },
-                    isError = loginStatus == LoginStatus.WrongPassword,//errorMessage != null,
-                    visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    isError = state.fieldErrors.containsKey(LoginErrorField.Password),
+                    visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(onClick = { togglePasswordVisibility() }) {
+                        IconButton(onClick = { callbacks.togglePasswordVisibility() }) {
                             Icon(
-                                if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                if (state.isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = "Pokaż/ukryj hasło"
                             )
                         }
@@ -193,48 +152,33 @@ fun LoginScreenContent(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TextButton(onClick = { onCreateNewAccountClick() }) {
+                    TextButton(onClick = { callbacks.onCreateNewAccountClick() }) {
                         Text("Utwórz konto")
                     }
-                    if (isLastLoggedUser) {
-                        TextButton(onClick = { toggleLoginFieldVisibility() }) {
-                            Text(if (isLoginFieldVisible) "Anuluj zmianę" else "Zmień konto")
+                    if (state.isLastLoggedUser) {
+                        TextButton(onClick = { callbacks.toggleLoginFieldVisibility() }) {
+                            Text(if (state.isLoginFieldVisible) "Anuluj zmianę" else "Zmień konto")
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                /*if (errorMessage != null) {
-                    Text(
-                        text = errorMessage,
-                        color = Color.Red,
-                        fontSize = 16.sp,
-                        modifier = Modifier
-                            .align(Alignment.Start)
-                            .padding(top = 4.dp)
-                    )
-                }*/
-
-                if (loginStatus != LoginStatus.Idle) {
-                    Text(
-                        text = when (loginStatus) {
-                            LoginStatus.WrongPassword -> "Błędne hasło"
-                            LoginStatus.Error -> "Wystąpił błąd"
-                            else -> ""
-                        },
-                        color = Color.Red,
-                        fontSize = 16.sp,
-                        modifier = Modifier
-                            .align(Alignment.Start)
-                            .padding(top = 4.dp)
-                    )
+                LoginErrorField.entries.forEach { field ->
+                    state.fieldErrors[field]?.let { error ->
+                        Text(
+                            text = error,
+                            color = Color.Red,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
 
                 Button(
-                    onClick = { onLoginClick() },
+                    onClick = { callbacks.onLoginClick() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
@@ -265,21 +209,15 @@ fun LoginScreenContent(
 fun LoginScreenPreview() {
     CashFlowTheme {
         LoginScreenContent(
-            //errorMessage = null,
-            isLastLoggedUser = true,
-            isLoginFieldVisible = true,
-            login = "login",
-            password = "password",
-            isPasswordVisible = true,
-            loginStatus = LoginStatus.WrongPassword,
-            onLoginStatusChange = { },
-            //setErrorMessage = { },
-            onLoginChange = { },
-            onPasswordChange = { },
-            togglePasswordVisibility = { },
-            toggleLoginFieldVisibility = { },
-            onLoginClick = { },
-            onCreateNewAccountClick = { }
+            state = LoginUiState(),
+            callbacks = LoginUiCallbacks(
+                onLoginChange = { },
+                onPasswordChange = { },
+                togglePasswordVisibility = { },
+                toggleLoginFieldVisibility = { },
+                onLoginClick = { },
+                onCreateNewAccountClick = { }
+            )
         )
     }
 }

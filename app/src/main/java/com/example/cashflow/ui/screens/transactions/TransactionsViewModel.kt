@@ -6,12 +6,23 @@ import com.example.cashflow.data.AppSessionRepository
 import com.example.cashflow.data.local.model.TransactionEntity
 import com.example.cashflow.data.local.model.TransactionType
 import com.example.cashflow.data.repository.TransactionRepository
+import com.example.cashflow.ui.core.AppUiEvent
+import com.example.cashflow.ui.core.CommonUiEvent
+import com.example.cashflow.ui.screens.save_transaction.SaveTransactionUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -20,25 +31,47 @@ class TransactionsViewModel @Inject constructor(
     private val sessionRepository: AppSessionRepository
 ) : ViewModel() {
 
+    private val _uiState = MutableStateFlow(TransactionsUiState())
+    val uiState = _uiState.asStateFlow()
+
+    private val _uiEvent = MutableSharedFlow<AppUiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
     private val user = sessionRepository.currentUser.value
         ?: throw IllegalStateException("User not logged in")
-    private val transactions = transactionRepository.getTransactionsForUser(user)
 
-    private val _selectedFilter = MutableStateFlow<TransactionType?>(null)
-    val selectedFilter: StateFlow<TransactionType?> = _selectedFilter
+    private val allTransactions = transactionRepository.getTransactionsForUser(user)
 
-    val filteredTransactions: StateFlow<List<TransactionEntity>> =
-        combine(transactions, _selectedFilter) { transactions, filter ->
-            filter?.let { tType ->
-                transactions.filter { it.type == tType }
-            } ?: transactions
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    init {
+        viewModelScope.launch {
+            combine(
+                allTransactions,
+                _uiState.map { it.selectedFilter }
+            ) { transactions, filter ->
+                filter?.let { type ->
+                    transactions.filter { it.type == type }
+                } ?: transactions
+            }.collect { filtered ->
+                _uiState.update { it.copy(transactions = filtered) }
+            }
+        }
+    }
 
     fun onFilterSelected(type: TransactionType?) {
-        _selectedFilter.value = type
+        _uiState.update {
+            it.copy(selectedFilter = type)
+        }
+    }
+
+    fun onAddTransactionClicked() {
+        viewModelScope.launch {
+            _uiEvent.emit(CommonUiEvent.NavigateToSaveTransaction(null))
+        }
+    }
+
+    fun onEditTransactionClicked(transactionId: Long) {
+        viewModelScope.launch {
+            _uiEvent.emit(CommonUiEvent.NavigateToSaveTransaction(transactionId))
+        }
     }
 }

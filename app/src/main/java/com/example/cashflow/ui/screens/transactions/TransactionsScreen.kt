@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -36,22 +37,35 @@ import com.example.cashflow.data.local.model.TransactionEntity
 import com.example.cashflow.data.local.model.TransactionType
 import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.components.TransactionList
+import com.example.cashflow.ui.core.CommonUiEvent
 import com.example.cashflow.ui.theme.CashFlowTheme
 
 @Composable
-fun TransactionsScreen(modifier: Modifier = Modifier,
-                       viewModel: TransactionsViewModel = hiltViewModel(),
-                       navController: NavHostController,
+fun TransactionsScreen(
+    modifier: Modifier = Modifier,
+    viewModel: TransactionsViewModel = hiltViewModel(),
+    navController: NavHostController,
 ) {
-    val transactions by viewModel.filteredTransactions.collectAsState(initial = emptyList())
-    val selectedFilter by viewModel.selectedFilter.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is CommonUiEvent.NavigateToSaveTransaction -> {
+                    navController.navigate(NavRoute.SaveTransactionScreen(event.transactionId))
+                }
+            }
+        }
+    }
+
     TransactionsScreenContent(
-        modifier = Modifier.fillMaxSize(),
-        filteredTransactions = transactions,
-        selectedFilter = selectedFilter,
-        onFilterSelected = { viewModel.onFilterSelected(it) },
-        onAddTransaction = { navController.navigate(NavRoute.SaveTransactionScreen(null)) },
-        onEditTransaction = { navController.navigate(NavRoute.SaveTransactionScreen(it.id)) }
+        modifier = modifier,
+        state = uiState,
+        callbacks = TransactionsUiCallbacks(
+            onFilterSelected = { viewModel.onFilterSelected(it) },
+            onAddTransactionClick = { viewModel.onAddTransactionClicked() },
+            onEditTransactionClick = { viewModel.onEditTransactionClicked(it.id) }
+        )
     )
 
 }
@@ -60,11 +74,8 @@ fun TransactionsScreen(modifier: Modifier = Modifier,
 @Composable
 fun TransactionsScreenContent(
     modifier: Modifier = Modifier,
-    filteredTransactions: List<TransactionEntity>,
-    selectedFilter: TransactionType?,
-    onFilterSelected: (transactionType: TransactionType?) -> Unit,
-    onAddTransaction: () -> Unit,
-    onEditTransaction: (transaction: TransactionEntity) -> Unit
+    state: TransactionsUiState,
+    callbacks: TransactionsUiCallbacks
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -78,8 +89,8 @@ fun TransactionsScreenContent(
             )
 
             FilterChipsRow(
-                selectedFilter = selectedFilter,
-                onFilterSelected = { onFilterSelected(it) }
+                selectedFilter = state.selectedFilter,
+                onFilterSelected = { callbacks.onFilterSelected(it) }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -91,14 +102,14 @@ fun TransactionsScreenContent(
             ) {
                 TransactionList(
                     modifier = Modifier.padding(vertical = 8.dp),
-                    transactions = filteredTransactions,
-                    onItemClick = onEditTransaction
+                    transactions = state.transactions,
+                    onItemClick = { callbacks.onEditTransactionClick(it) }
                 )
             }
         }
 
         FloatingActionButton(
-            onClick = { onAddTransaction() },
+            onClick = { callbacks.onAddTransactionClick() },
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier
@@ -147,16 +158,12 @@ fun FilterChipsRow(
 fun TransactionsScreenPreview() {
     CashFlowTheme {
         TransactionsScreenContent(
-            filteredTransactions = listOf(
-                TransactionEntity(id = 1, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 45.99f, type = TransactionType.INCOME, dateMillis = System.currentTimeMillis()),
-                TransactionEntity(id = 2, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 29.99f, type = TransactionType.EXPENSE, dateMillis = 2),
-                TransactionEntity(id = 3, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 5000.00f, type = TransactionType.EXPENSE, dateMillis = System.currentTimeMillis()),
-                TransactionEntity(id = 4, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 12.50f, type = TransactionType.INCOME, dateMillis = System.currentTimeMillis())
-            ),
-            selectedFilter = TransactionType.INCOME,
-            onFilterSelected = { },
-            onAddTransaction = { },
-            onEditTransaction = { }
+            state = TransactionsUiState(),
+            callbacks = TransactionsUiCallbacks(
+                onFilterSelected = { },
+                onAddTransactionClick = { },
+                onEditTransactionClick = { }
+            )
         )
     }
 }

@@ -10,6 +10,9 @@ import com.example.cashflow.data.local.model.TransactionEntity
 import com.example.cashflow.data.local.model.TransactionType
 import com.example.cashflow.data.repository.TransactionRepository
 import com.example.cashflow.navigation.NavRoute
+import com.example.cashflow.ui.core.AppUiEvent
+import com.example.cashflow.ui.core.CommonUiEvent
+import com.example.cashflow.ui.screens.register.RegisterUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -21,88 +24,84 @@ class SaveTransactionViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val sessionRepository: AppSessionRepository
 ) : ViewModel() {
-
     private val args: NavRoute.SaveTransactionScreen = savedStateHandle.toRoute()
 
-    init {
-        if (args.transactionId != null) loadTransaction(args.transactionId)
-    }
+    private val _uiState = MutableStateFlow(SaveTransactionUiState())
+    val uiState = _uiState.asStateFlow()
+
+    private val _uiEvent = MutableSharedFlow<AppUiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
 
     private val user = sessionRepository.currentUser.value
         ?: throw IllegalStateException("User not logged in")
 
-    private val _isTransactionSaved = MutableStateFlow(false)
-    val isTransactionSaved: StateFlow<Boolean> = _isTransactionSaved
-
-    private val _transactionType = MutableStateFlow(TransactionType.EXPENSE)
-    val transactionType: StateFlow<TransactionType> = _transactionType
-
-    private val _transactionCategory = MutableStateFlow(TransactionCategory.TRANSFER)
-    val transactionCategory: StateFlow<TransactionCategory> = _transactionCategory
-
-    private val _amount = MutableStateFlow("")
-    val amount: StateFlow<String> = _amount
-
-    private val _description = MutableStateFlow("")
-    val description: StateFlow<String> = _description
-
-    private val _dateMillis = MutableStateFlow(0L)
-    val dateMillis: StateFlow<Long> = _dateMillis
-
-    private val _isDropdownExpanded = MutableStateFlow(false)
-    val isDropdownExpanded: StateFlow<Boolean> = _isDropdownExpanded
-
-    fun onTransactionTypeChanged(type: TransactionType) {
-        _transactionType.value = type
+    init {
+        args.transactionId?.let { loadTransaction(it) }
     }
 
-    fun onTransactionCategoryChanged(item: TransactionCategory) {
-        _transactionCategory.value = item
-        _isDropdownExpanded.value = false
+    fun onTransactionTypeChanged(type: TransactionType) {
+        _uiState.update { it.copy(transactionType = type) }
+    }
+
+    fun onTransactionCategoryChanged(category: TransactionCategory) {
+        _uiState.update {
+            it.copy(transactionCategory = category, isDropdownExpanded = false)
+        }
     }
 
     fun onAmountChanged(newAmount: String) {
         if (newAmount.matches(Regex("^\\d*\\.?\\d*\$"))) {
-            _amount.value = newAmount
+            _uiState.update { it.copy(amount = newAmount) }
         }
     }
 
     fun onDescriptionChanged(newDescription: String) {
-        _description.value = newDescription
+        _uiState.update { it.copy(description = newDescription) }
     }
 
     fun onDateSelected(dateMillis: Long) {
-        _dateMillis.value = dateMillis
+        _uiState.update { it.copy(dateMillis = dateMillis) }
     }
 
     fun toggleDropdown() {
-        _isDropdownExpanded.value = !_isDropdownExpanded.value
+        _uiState.update { it.copy(isDropdownExpanded = !it.isDropdownExpanded) }
     }
 
     fun saveTransaction() {
         viewModelScope.launch {
+            val state = _uiState.value
+
+            if (state.amount.isBlank() || state.amount.toFloatOrNull() == null) {
+                _uiEvent.emit(SaveTransactionUiEvent.ShowMessage("Amount is invalid"))
+                return@launch
+            }
+
             val transaction = TransactionEntity(
                 userId = user.id,
-                category = _transactionCategory.value,
-                description = _description.value,
-                amount = _amount.value.toFloat(),
-                type = _transactionType.value,
-                dateMillis = _dateMillis.value
+                category = state.transactionCategory,
+                description = state.description,
+                amount = state.amount.toFloat(),
+                type = state.transactionType,
+                dateMillis = state.dateMillis
             )
             transactionRepository.insertTransaction(transaction)
-            _isTransactionSaved.value = true
+            _uiEvent.emit(CommonUiEvent.NavigateToHome)
         }
     }
 
-    fun loadTransaction(transactionId: Long) {
+    private fun loadTransaction(transactionId: Long) {
         viewModelScope.launch {
             val transaction = transactionRepository.getTransactionById(transactionId)
-            if (transaction != null) {
-                _transactionType.value = transaction.type
-                _transactionCategory.value = transaction.category
-                _amount.value = transaction.amount.toString()
-                _description.value = transaction.description
-                _dateMillis.value = transaction.dateMillis
+            transaction?.let {
+                _uiState.update {
+                    it.copy(
+                        transactionType = transaction.type,
+                        transactionCategory = transaction.category,
+                        amount = transaction.amount.toString(),
+                        description = transaction.description,
+                        dateMillis = transaction.dateMillis
+                    )
+                }
             }
         }
     }

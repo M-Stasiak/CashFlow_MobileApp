@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.cashflow.navigation.NavRoute
+import com.example.cashflow.ui.core.CommonUiEvent
+import com.example.cashflow.ui.screens.login.LoginErrorField
 import com.example.cashflow.ui.theme.CashFlowTheme
 
 @Composable
@@ -44,58 +46,36 @@ fun RegisterScreen(
     viewModel: RegisterViewModel = hiltViewModel(),
     navController: NavHostController,
 ) {
-    val name by viewModel.name.collectAsState()
-    val login by viewModel.login.collectAsState()
-    val password by viewModel.password.collectAsState()
-    val confirmPassword by viewModel.confirmPassword.collectAsState()
-    val isPasswordVisible by viewModel.isPasswordVisible.collectAsState()
-    val isConfirmPasswordVisible by viewModel.isConfirmPasswordVisible.collectAsState()
-    val registerStatus by viewModel.registerStatus.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(registerStatus) {
-        if (registerStatus == RegisterStatus.Success) {
-            navController.navigate(NavRoute.HomeScreen)
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is RegisterUiEvent.RegisteredSuccessfully -> { }
+                is RegisterUiEvent.LoggedSuccessfully -> { navController.navigate(NavRoute.HomeScreen) }
+            }
         }
     }
-    
+
     RegisterScreenContent(
-        modifier = Modifier.fillMaxSize(),
-        name = name,
-        login = login,
-        password = password,
-        confirmPassword = confirmPassword,
-        isPasswordVisible = isPasswordVisible,
-        isConfirmPasswordVisible = isConfirmPasswordVisible,
-        registerStatus = registerStatus,
-        onRegisterStatusChange = { viewModel.onRegisterStatusChange(it) },
-        onNameChange = { viewModel.onNameChange(it) },
-        onLoginChange = { viewModel.onLoginChange(it) },
-        onPasswordChange = { viewModel.onPasswordChange(it) },
-        onConfirmPasswordChange = { viewModel.onConfirmPasswordChange(it) },
-        togglePasswordVisibility = { viewModel.togglePasswordVisibility() },
-        toggleConfirmPasswordVisibility = { viewModel.toggleConfirmPasswordVisibility() },
-        onRegister = { viewModel.register() }
+        state = uiState,
+        callbacks = RegisterUiCallbacks(
+            onNameChange = { viewModel.onNameChange(it) },
+            onLoginChange = { viewModel.onLoginChange(it) },
+            onPasswordChange = { viewModel.onPasswordChange(it) },
+            onConfirmPasswordChange = { viewModel.onConfirmPasswordChange(it) },
+            togglePasswordVisibility = { viewModel.togglePasswordVisibility() },
+            toggleConfirmPasswordVisibility = { viewModel.toggleConfirmPasswordVisibility() },
+            onRegisterClick = { viewModel.register() },
+        )
     )
 }
 
 @Composable
 fun RegisterScreenContent(
     modifier: Modifier = Modifier,
-    name: String,
-    login: String,
-    password: String,
-    confirmPassword: String,
-    isPasswordVisible: Boolean,
-    isConfirmPasswordVisible: Boolean,
-    registerStatus: RegisterStatus,
-    onRegisterStatusChange: (RegisterStatus) -> Unit,
-    onNameChange: (String) -> Unit,
-    onLoginChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit,
-    onConfirmPasswordChange: (String) -> Unit,
-    togglePasswordVisibility: () -> Unit,
-    toggleConfirmPasswordVisibility: () -> Unit,
-    onRegister: () -> Unit
+    state: RegisterUiState,
+    callbacks: RegisterUiCallbacks
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -126,9 +106,10 @@ fun RegisterScreenContent(
 
             // Nazwa
             OutlinedTextField(
-                value = name,
-                onValueChange = { onNameChange(it) },
+                value = state.name,
+                onValueChange = { callbacks.onNameChange(it) },
                 label = { Text("Imię i nazwisko") },
+                isError = state.fieldErrors.containsKey(RegisterErrorField.Name),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -137,15 +118,10 @@ fun RegisterScreenContent(
 
             // Login
             OutlinedTextField(
-                value = login,
-                onValueChange = {
-                    onLoginChange(it)
-                    if (registerStatus != RegisterStatus.Idle) {
-                        onRegisterStatusChange(RegisterStatus.Idle)
-                    }
-                },
+                value = state.login,
+                onValueChange = { callbacks.onLoginChange(it) },
                 label = { Text("Login") },
-                isError = registerStatus == RegisterStatus.LoginTaken,
+                isError = state.fieldErrors.containsKey(RegisterErrorField.Login),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -154,14 +130,15 @@ fun RegisterScreenContent(
 
             // Hasło
             OutlinedTextField(
-                value = password,
-                onValueChange = { onPasswordChange(it) },
+                value = state.password,
+                onValueChange = { callbacks.onPasswordChange(it) },
                 label = { Text("Hasło") },
-                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                isError = state.fieldErrors.containsKey(RegisterErrorField.Password),
+                visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    IconButton(onClick = { togglePasswordVisibility() }) {
+                    IconButton(onClick = { callbacks.togglePasswordVisibility() }) {
                         Icon(
-                            if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            if (state.isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = "Pokaż/ukryj hasło"
                         )
                     }
@@ -174,14 +151,15 @@ fun RegisterScreenContent(
 
             // Powtórz hasło
             OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { onConfirmPasswordChange(it) },
+                value = state.confirmPassword,
+                onValueChange = { callbacks.onConfirmPasswordChange(it) },
                 label = { Text("Powtórz hasło") },
-                visualTransformation = if (isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                isError = state.fieldErrors.containsKey(RegisterErrorField.ConfirmPassword),
+                visualTransformation = if (state.isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    IconButton(onClick = { toggleConfirmPasswordVisibility() }) {
+                    IconButton(onClick = { callbacks.toggleConfirmPasswordVisibility() }) {
                         Icon(
-                            if (isConfirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            if (state.isConfirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = "Pokaż/ukryj hasło"
                         )
                     }
@@ -192,25 +170,21 @@ fun RegisterScreenContent(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (registerStatus != RegisterStatus.Idle) {
-                Text(
-                    text = when (registerStatus) {
-                        RegisterStatus.LoginTaken -> "Login jest już zajęty"
-                        RegisterStatus.Error -> "Wystąpił błąd"
-                        else -> ""
-                    },
-                    color = Color.Red,
-                    fontSize = 16.sp,
-                    modifier = Modifier
-                        .align(Alignment.Start)
-                        .padding(top = 4.dp)
-                )
+            RegisterErrorField.entries.forEach { field ->
+                state.fieldErrors[field]?.let { error ->
+                    Text(
+                        text = error,
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = { onRegister() },
+                onClick = { callbacks.onRegisterClick() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -230,21 +204,16 @@ fun RegisterScreenContent(
 fun RegisterScreenPreview() {
     CashFlowTheme {
         RegisterScreenContent(
-            name = "Mati",
-            login = "mati",
-            password = "password",
-            confirmPassword = "confirmPassword",
-            isPasswordVisible = true,
-            isConfirmPasswordVisible = true,
-            registerStatus = RegisterStatus.Idle,
-            onRegisterStatusChange = { },
-            onNameChange = { },
-            onLoginChange = { },
-            onPasswordChange = { },
-            onConfirmPasswordChange = { },
-            togglePasswordVisibility = { },
-            toggleConfirmPasswordVisibility = { },
-            onRegister = { }
+            state = RegisterUiState(),
+            callbacks = RegisterUiCallbacks(
+                onNameChange = {  },
+                onLoginChange = { },
+                onPasswordChange = { },
+                onConfirmPasswordChange = { },
+                togglePasswordVisibility = { },
+                toggleConfirmPasswordVisibility = { },
+                onRegisterClick = { },
+            )
         )
     }
 }

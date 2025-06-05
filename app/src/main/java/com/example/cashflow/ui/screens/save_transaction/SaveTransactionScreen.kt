@@ -35,6 +35,7 @@ import com.example.cashflow.data.local.model.TransactionCategory
 import com.example.cashflow.data.local.model.TransactionType
 import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.components.getTransactionCategoryUiByEnum
+import com.example.cashflow.ui.core.CommonUiEvent
 import com.example.cashflow.util.formatDate
 import java.util.*
 
@@ -44,55 +45,42 @@ fun SaveTransactionScreen(
     viewModel: SaveTransactionViewModel = hiltViewModel(),
     navController: NavHostController,
 ) {
+    val uiState by viewModel.uiState.collectAsState()
 
-    val isTransactionSaved by viewModel.isTransactionSaved.collectAsState()
-    val transactionType by viewModel.transactionType.collectAsState()
-    val transactionCategory by viewModel.transactionCategory.collectAsState()
-    val amount by viewModel.amount.collectAsState()
-    val description by viewModel.description.collectAsState()
-    val dateMillis by viewModel.dateMillis.collectAsState()
-    val isDropdownExpanded by viewModel.isDropdownExpanded.collectAsState()
-
-    LaunchedEffect(isTransactionSaved) {
-        if (isTransactionSaved) {
-            navController.popBackStack()
-            navController.navigate(NavRoute.HomeScreen)
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is CommonUiEvent.NavigateToHome -> {
+                    navController.popBackStack()
+                    navController.navigate(NavRoute.HomeScreen)
+                }
+                is SaveTransactionUiEvent.ShowMessage -> {
+                    //Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
     SaveTransactionScreenContent(
-        transactionType = transactionType,
-        transactionCategory = transactionCategory,
-        amount = amount,
-        description = description,
-        dateMillis = dateMillis,
-        isDropdownExpanded = isDropdownExpanded,
-        onTransactionTypeChanged = { viewModel.onTransactionTypeChanged(it) },
-        onTransactionCategoryChanged = { viewModel.onTransactionCategoryChanged(it) },
-        onAmountChanged = { viewModel.onAmountChanged(it) },
-        onDescriptionChanged = { viewModel.onDescriptionChanged(it) },
-        onDateSelected = { viewModel.onDateSelected(it) },
-        onDropdownToggle = { viewModel.toggleDropdown() },
-        onAddExpense = { viewModel.saveTransaction() }
+        state = uiState,
+        callbacks = SaveTransactionUiCallbacks(
+            onTransactionTypeChanged = { viewModel.onTransactionTypeChanged(it) },
+            onTransactionCategoryChanged = { viewModel.onTransactionCategoryChanged(it) },
+            onAmountChanged = { viewModel.onAmountChanged(it) },
+            onDescriptionChanged = { viewModel.onDescriptionChanged(it) },
+            onDateSelected = { viewModel.onDateSelected(it) },
+            onDropdownToggle = { viewModel.toggleDropdown() },
+            onAddExpense = { viewModel.saveTransaction() }
+        )
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SaveTransactionScreenContent(
-    transactionType: TransactionType,
-    transactionCategory: TransactionCategory,
-    amount: String,
-    description: String,
-    dateMillis: Long,
-    isDropdownExpanded: Boolean,
-    onTransactionTypeChanged: (TransactionType) -> Unit,
-    onTransactionCategoryChanged: (TransactionCategory) -> Unit,
-    onAmountChanged: (String) -> Unit,
-    onDescriptionChanged: (String) -> Unit,
-    onDateSelected: (Long) -> Unit,
-    onDropdownToggle: () -> Unit,
-    onAddExpense: () -> Unit
+    modifier: Modifier = Modifier,
+    state: SaveTransactionUiState,
+    callbacks: SaveTransactionUiCallbacks
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
@@ -110,7 +98,7 @@ fun SaveTransactionScreenContent(
                     set(Calendar.SECOND, 0)
                     set(Calendar.MILLISECOND, 0)
                 }
-                onDateSelected(pickedCalendar.timeInMillis)
+                callbacks.onDateSelected(pickedCalendar.timeInMillis)
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
@@ -161,9 +149,9 @@ fun SaveTransactionScreenContent(
                         )
 
                         types.forEach { (type, label) ->
-                            val selected = transactionType == type
+                            val selected = state.transactionType == type
                             OutlinedButton(
-                                onClick = { onTransactionTypeChanged(type) },
+                                onClick = { callbacks.onTransactionTypeChanged(type) },
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     containerColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
                                     contentColor = if (selected) Color.White else MaterialTheme.colorScheme.onSurface
@@ -180,8 +168,8 @@ fun SaveTransactionScreenContent(
                     // Category
                     ExposedDropdownMenuBox(
                         modifier = Modifier.fillMaxWidth(),
-                        expanded = isDropdownExpanded,
-                        onExpandedChange = { onDropdownToggle() }
+                        expanded = state.isDropdownExpanded,
+                        onExpandedChange = { callbacks.onDropdownToggle() }
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -189,23 +177,23 @@ fun SaveTransactionScreenContent(
                         ) {
                             TextField(
                                 modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true).fillMaxWidth(),
-                                value = getTransactionCategoryUiByEnum(transactionCategory).title,
+                                value = getTransactionCategoryUiByEnum(state.transactionCategory).title,
                                 onValueChange = { },
                                 readOnly = true,
                                 trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.isDropdownExpanded)
                                 },
                                 leadingIcon = {
                                     Icon(
-                                        imageVector = getTransactionCategoryUiByEnum(transactionCategory).icon,
-                                        contentDescription = getTransactionCategoryUiByEnum(transactionCategory).title
+                                        imageVector = getTransactionCategoryUiByEnum(state.transactionCategory).icon,
+                                        contentDescription = getTransactionCategoryUiByEnum(state.transactionCategory).title
                                     )
                                 }
                             )
                         }
                         ExposedDropdownMenu(
-                            expanded = isDropdownExpanded,
-                            onDismissRequest = { onDropdownToggle() }
+                            expanded = state.isDropdownExpanded,
+                            onDismissRequest = { callbacks.onDropdownToggle() }
                         ) {
                             TransactionCategory.entries.forEachIndexed { _, item ->
                                 DropdownMenuItem(
@@ -221,7 +209,7 @@ fun SaveTransactionScreenContent(
                                             Text(getTransactionCategoryUiByEnum(item).title)
                                         }
                                     },
-                                    onClick = { onTransactionCategoryChanged(item) },
+                                    onClick = { callbacks.onTransactionCategoryChanged(item) },
                                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                                 )
                             }
@@ -232,8 +220,8 @@ fun SaveTransactionScreenContent(
 
                     // Amount
                     TextField(
-                        value = amount,
-                        onValueChange = onAmountChanged,
+                        value = state.amount,
+                        onValueChange = { callbacks.onAmountChanged(it) },
                         label = { Text("Amount") },
                         placeholder = { Text("$") },
                         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
@@ -244,8 +232,8 @@ fun SaveTransactionScreenContent(
 
                     // Description
                     TextField(
-                        value = description,
-                        onValueChange = onDescriptionChanged,
+                        value = state.description,
+                        onValueChange = { callbacks.onDescriptionChanged(it) },
                         label = { Text("Description") },
                         placeholder = { Text("Add note..." ) },
                         modifier = Modifier.fillMaxWidth(),
@@ -262,7 +250,7 @@ fun SaveTransactionScreenContent(
                             .clickable { datePickerDialog.show() }
                     ) {
                         TextField(
-                            value = formatDate(dateMillis),
+                            value = formatDate(state.dateMillis),
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Date") },
@@ -276,7 +264,7 @@ fun SaveTransactionScreenContent(
 
                     // Save Button
                     Button(
-                        onClick = onAddExpense,
+                        onClick = { callbacks.onAddExpense() },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Add Expense")
@@ -291,18 +279,15 @@ fun SaveTransactionScreenContent(
 @Composable
 fun SaveTransactionScreenPreview() {
     SaveTransactionScreenContent(
-        transactionCategory = TransactionCategory.TRANSFER,
-        amount = "120.50",
-        description = "Opis",
-        dateMillis = System.currentTimeMillis(),
-        transactionType = TransactionType.EXPENSE,
-        isDropdownExpanded = false,
-        onTransactionCategoryChanged = {},
-        onAmountChanged = {},
-        onDescriptionChanged = {},
-        onDateSelected = {},
-        onTransactionTypeChanged = {},
-        onDropdownToggle = {},
-        onAddExpense = {}
+        state = SaveTransactionUiState(),
+        callbacks = SaveTransactionUiCallbacks(
+            onTransactionTypeChanged = { },
+            onTransactionCategoryChanged = { },
+            onAmountChanged = { },
+            onDescriptionChanged = { },
+            onDateSelected = { },
+            onDropdownToggle = { },
+            onAddExpense = { }
+        )
     )
 }

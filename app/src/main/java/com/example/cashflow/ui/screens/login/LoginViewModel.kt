@@ -3,6 +3,7 @@ package com.example.cashflow.ui.screens.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cashflow.data.AppSessionRepository
+import com.example.cashflow.data.repository.LoginResult
 import com.example.cashflow.data.repository.UserRepository
 import com.example.cashflow.ui.core.AppUiEvent
 import com.example.cashflow.ui.core.CommonUiEvent
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,54 +24,38 @@ class LoginViewModel @Inject constructor(
     private val sessionRepository: AppSessionRepository
 ) : ViewModel() {
 
+    private val _uiState = MutableStateFlow(LoginUiState())
+    val uiState = _uiState.asStateFlow()
+
     private val _uiEvent = MutableSharedFlow<AppUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage = _errorMessage.asStateFlow()
-
     private var userLogin = ""
 
-    private val _isLastLoggedUser = MutableStateFlow(false)
-    val isLastLoggedUser = _isLastLoggedUser.asStateFlow()
-
-    private val _isLoginFieldVisible = MutableStateFlow(false)
-    val isLoginFieldVisible = _isLoginFieldVisible.asStateFlow()
-
-    private val _login = MutableStateFlow("")
-    val login = _login.asStateFlow()
-
-    private val _password = MutableStateFlow("")
-    val password = _password.asStateFlow()
-
-    private val _isPasswordVisible = MutableStateFlow(false)
-    val isPasswordVisible = _isPasswordVisible.asStateFlow()
-
-    private val _loginStatus = MutableStateFlow(LoginStatus.Idle)
-    val loginStatus = _loginStatus.asStateFlow()
-
-    fun onLoginStatusChange(newLoginStatus: LoginStatus) {
-        _loginStatus.value = newLoginStatus
+    fun onLoginChange(login: String) {
+        _uiState.update {
+            it.copy(
+                login = login,
+                fieldErrors = it.fieldErrors - LoginErrorField.Login
+            )
+        }
     }
 
-    fun setErrorMessage(errorMessage: String?) {
-        _errorMessage.value = errorMessage
-    }
-
-    fun onLoginChange(newLogin: String) {
-        _login.value = newLogin
-    }
-
-    fun onPasswordChange(newPassword: String) {
-        _password.value = newPassword
-    }
-
-    fun toggleLoginFieldVisibility() {
-        _isLoginFieldVisible.value = !_isLoginFieldVisible.value
+    fun onPasswordChange(password: String) {
+        _uiState.update {
+            it.copy(
+                password = password,
+                fieldErrors = it.fieldErrors - LoginErrorField.Password
+            )
+        }
     }
 
     fun togglePasswordVisibility() {
-        _isPasswordVisible.value = !_isPasswordVisible.value
+        _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
+    }
+
+    fun toggleLoginFieldVisibility() {
+        _uiState.update { it.copy(isLoginFieldVisible = !it.isLoginFieldVisible) }
     }
 
     fun onLoginClick() {
@@ -79,23 +65,34 @@ class LoginViewModel @Inject constructor(
     fun onCreateNewAccountClick() {
         viewModelScope.launch {
             _uiEvent.emit(CommonUiEvent.NavigateToRegister)
-            _loginStatus.value = LoginStatus.CreateAccount
+            //_loginStatus.value = LoginStatus.CreateAccount
         }
     }
 
     fun login() {
         viewModelScope.launch {
-            var login = _login.value
-            if (_isLastLoggedUser.value and !_isLoginFieldVisible.value) login = userLogin
-            val user = userRepository.loginUser(login = login, password = _password.value)
-            if (user != null) {
-                sessionRepository.setCurrentUser(user)
-                _loginStatus.value = LoginStatus.Success
-                _uiEvent.emit(LoginUiEvent.LoggedSuccessfully)
-            }
-            else {
-                _loginStatus.value = LoginStatus.WrongPassword
-                _uiEvent.emit(LoginUiEvent.WrongPassword)
+            val currentState = _uiState.value
+            var login = currentState.login
+
+            if (currentState.isLastLoggedUser and !currentState.isLoginFieldVisible) login = userLogin
+            val result = userRepository.loginUser(login = login, password = currentState.password)
+
+            when (result) {
+                is LoginResult.Success -> {
+                    sessionRepository.setCurrentUser(result.user)
+                    _uiState.update { it.copy(fieldErrors = emptyMap()) }
+                    _uiEvent.emit(LoginUiEvent.LoggedSuccessfully)
+                }
+                is LoginResult.WrongPassword -> {
+                    _uiState.update {
+                        it.copy(fieldErrors = mapOf(LoginErrorField.Password to "Błędne hasło"))
+                    }
+                }
+                is LoginResult.UserNotFound -> {
+                    _uiState.update {
+                        it.copy(fieldErrors = mapOf(LoginErrorField.Login to "Użytkownik nie istnieje"))
+                    }
+                }
             }
         }
     }
@@ -105,16 +102,15 @@ class LoginViewModel @Inject constructor(
             sessionRepository.lastLoggedUserId
                 .filterNotNull()
                 .firstOrNull()?.let { id ->
+                    val state = _uiState.value
                     val userLoginPom = userRepository.getUserLoginById(id)
                     if (userLoginPom != null) {
                         userLogin = userLoginPom
-                        _isLastLoggedUser.value = true
+                        _uiState.update { it.copy(isLastLoggedUser = true) }
                         return@launch
                     }
                 }
-            _isLoginFieldVisible.value = true
+            _uiState.update { it.copy(isLoginFieldVisible = true) }
         }
     }
 }
-
-enum class LoginStatus { Idle, Success, WrongPassword, CreateAccount, Error}

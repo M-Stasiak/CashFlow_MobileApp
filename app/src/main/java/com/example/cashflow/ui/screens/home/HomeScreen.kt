@@ -16,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -32,6 +33,7 @@ import com.example.cashflow.data.local.model.TransactionType
 import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.screens.home.components.CardItem
 import com.example.cashflow.ui.components.TransactionList
+import com.example.cashflow.ui.core.CommonUiEvent
 import com.example.cashflow.ui.theme.CashFlowTheme
 
 @Composable
@@ -40,46 +42,52 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     navController: NavHostController,
 ) {
-    val transactions by viewModel.transactions.collectAsState(initial = emptyList())
-    val balance by viewModel.balance.collectAsState(initial = 0f)
-    val income by viewModel.income.collectAsState(initial = 0f)
-    val expense by viewModel.expense.collectAsState(initial = 0f)
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is CommonUiEvent.NavigateToSaveTransaction -> { navController.navigate(NavRoute.SaveTransactionScreen(event.transactionId)) }
+            }
+        }
+    }
+
     val animatedBalance by animateFloatAsState(
-        targetValue = balance,
+        targetValue = uiState.balance,
         animationSpec = tween(durationMillis = 1000, delayMillis = 500, easing = FastOutSlowInEasing),
         label = "BalanceAnimation"
     )
     val animatedIncome by animateFloatAsState(
-        targetValue = income,
+        targetValue = uiState.income,
         animationSpec = tween(durationMillis = 1000, delayMillis = 500, easing = FastOutSlowInEasing),
         label = "IncomeAnimation"
     )
     val animatedExpense by animateFloatAsState(
-        targetValue = expense,
+        targetValue = uiState.expense,
         animationSpec = tween(durationMillis = 1000, delayMillis = 500, easing = FastOutSlowInEasing),
         label = "ExpenseAnimation"
     )
 
     HomeScreenContent(
-        modifier = Modifier.fillMaxSize(),
+        state = uiState,
         animatedBalance = animatedBalance,
         animatedIncome = animatedIncome,
         animatedExpense = animatedExpense,
-        transactions = transactions,
-        onAddTransaction = { navController.navigate(NavRoute.SaveTransactionScreen(null)) },
-        onEditTransaction = { navController.navigate(NavRoute.SaveTransactionScreen(it.id)) }
+        callbacks = HomeUiCallbacks(
+            onAddTransactionClick = { viewModel.onAddTransactionClick() },
+            onEditTransactionClick = { viewModel.onEditTransactionClick(it.id) }
+        )
     )
 }
 
 @Composable
 fun HomeScreenContent(
     modifier: Modifier = Modifier,
+    state: HomeUiState,
     animatedBalance: Float,
     animatedIncome: Float,
     animatedExpense: Float,
-    transactions: List<TransactionEntity>,
-    onAddTransaction: () -> Unit,
-    onEditTransaction: (transaction: TransactionEntity) -> Unit
+    callbacks: HomeUiCallbacks
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier
@@ -98,13 +106,13 @@ fun HomeScreenContent(
             Text("Recent Transactions", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             TransactionList(
-                transactions = transactions,
-                onItemClick = { onEditTransaction(it)}
+                transactions = state.transactions,
+                onItemClick = { callbacks.onEditTransactionClick(it)}
             )
         }
 
         FloatingActionButton(
-            onClick = { onAddTransaction() },
+            onClick = { callbacks.onAddTransactionClick() },
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier
@@ -124,17 +132,14 @@ fun HomeScreenContent(
 fun HomeScreenPreview() {
     CashFlowTheme {
         HomeScreenContent(
+            state = HomeUiState(),
             animatedBalance = 100f,
             animatedIncome = 100f,
             animatedExpense = 100f,
-            transactions = listOf(
-                TransactionEntity(id = 1, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 45.99f, type = TransactionType.INCOME, dateMillis = System.currentTimeMillis()),
-                TransactionEntity(id = 2, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 29.99f, type = TransactionType.EXPENSE, dateMillis = 2),
-                TransactionEntity(id = 3, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 5000.00f, type = TransactionType.EXPENSE, dateMillis = System.currentTimeMillis()),
-                TransactionEntity(id = 4, userId = 0, category = TransactionCategory.TRANSFER, description = "Opis", amount = 12.50f, type = TransactionType.INCOME, dateMillis = System.currentTimeMillis())
-            ),
-            onAddTransaction = { },
-            onEditTransaction = { }
+            callbacks = HomeUiCallbacks(
+                onAddTransactionClick = { },
+                onEditTransactionClick = { }
+            )
         )
     }
 }
