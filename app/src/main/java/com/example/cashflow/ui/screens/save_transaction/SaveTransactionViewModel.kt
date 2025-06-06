@@ -36,7 +36,10 @@ class SaveTransactionViewModel @Inject constructor(
         ?: throw IllegalStateException("User not logged in")
 
     init {
-        args.transactionId?.let { loadTransaction(it) }
+        args.transactionId?.let { transactionId ->
+            _uiState.update { it.copy(isNewTransaction = false) }
+            loadTransaction(transactionId)
+        }
     }
 
     fun onTransactionTypeChanged(type: TransactionType) {
@@ -67,6 +70,18 @@ class SaveTransactionViewModel @Inject constructor(
         _uiState.update { it.copy(isDropdownExpanded = !it.isDropdownExpanded) }
     }
 
+    fun onBackClick() {
+        viewModelScope.launch {
+            _uiEvent.emit(CommonUiEvent.NavigateBack)
+        }
+    }
+
+    fun onToggleEdit() {
+        if (!_uiState.value.isNewTransaction) {
+            _uiState.update { it.copy(isEditing = !it.isEditing) }
+        }
+    }
+
     fun saveTransaction() {
         viewModelScope.launch {
             val state = _uiState.value
@@ -77,6 +92,7 @@ class SaveTransactionViewModel @Inject constructor(
             }
 
             val transaction = TransactionEntity(
+                id = args.transactionId ?: 0,
                 userId = user.id,
                 category = state.transactionCategory,
                 description = state.description,
@@ -84,8 +100,9 @@ class SaveTransactionViewModel @Inject constructor(
                 type = state.transactionType,
                 dateMillis = state.dateMillis
             )
-            transactionRepository.insertTransaction(transaction)
-            _uiEvent.emit(CommonUiEvent.NavigateToHome)
+            if (state.isNewTransaction) transactionRepository.insertTransaction(transaction)
+            else transactionRepository.updateTransaction(transaction)
+            _uiEvent.emit(CommonUiEvent.NavigateBack)
         }
     }
 

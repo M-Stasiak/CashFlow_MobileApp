@@ -12,4 +12,5 @@ sealed interface CommonUiEvent : AppUiEvent {
     data class NavigateToSaveTransaction(val transactionId: Long?) : CommonUiEvent
     data object NavigateToTransactions : CommonUiEvent
     data class ShowGenericError(val message: String) : CommonUiEvent
+    data class ShowToast(val message: String) : CommonUiEvent
 }

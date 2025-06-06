@@ -14,7 +14,9 @@ data class SaveTransactionUiState(
     val amount: String = "",
     val description: String = "",
     val dateMillis: Long = 0L,
-    val isDropdownExpanded: Boolean = false
+    val isDropdownExpanded: Boolean = false,
+    val isNewTransaction: Boolean = true,
+    val isEditing: Boolean = false
 )
 
 data class SaveTransactionUiCallbacks(
@@ -24,5 +26,7 @@ data class SaveTransactionUiCallbacks(
     val onDescriptionChanged: (String) -> Unit,
     val onDateSelected: (Long) -> Unit,
     val onDropdownToggle: () -> Unit,
-    val onAddExpense: () -> Unit
+    val onSaveExpense: () -> Unit,
+    val onToggleEdit: () -> Unit,
+    val onBackClick: () -> Unit
 )

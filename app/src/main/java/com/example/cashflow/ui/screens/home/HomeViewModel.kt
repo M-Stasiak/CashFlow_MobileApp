@@ -31,6 +31,9 @@ class HomeViewModel @Inject constructor(
     private val _uiEvent = MutableSharedFlow<AppUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
+    private val _showLogoutDialog = MutableStateFlow(false)
+    val showLogoutDialog = _showLogoutDialog.asStateFlow()
+
     private val user = sessionRepository.currentUser.value
         ?: throw IllegalStateException("User not logged in")
 
@@ -60,6 +63,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun setShowLogoutDialog(show: Boolean) {
+        _showLogoutDialog.value = show
+    }
+
     fun onAddTransactionClick() {
         viewModelScope.launch {
             _uiEvent.emit(CommonUiEvent.NavigateToSaveTransaction(null))
@@ -69,6 +76,13 @@ class HomeViewModel @Inject constructor(
     fun onEditTransactionClick(transactionId: Long) {
         viewModelScope.launch {
             _uiEvent.emit(CommonUiEvent.NavigateToSaveTransaction(transactionId))
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            sessionRepository.clearCurrentUser()
+            _uiEvent.emit(CommonUiEvent.NavigateToLogin)
         }
     }
 }

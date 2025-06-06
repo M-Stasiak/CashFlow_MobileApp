@@ -2,12 +2,20 @@ package com.example.cashflow.ui.screens.save_transaction
 
 import android.app.DatePickerDialog
 import android.widget.DatePicker
+import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -17,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
@@ -26,6 +35,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -46,16 +56,16 @@ fun SaveTransactionScreen(
     navController: NavHostController,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
-                is CommonUiEvent.NavigateToHome -> {
+                is CommonUiEvent.NavigateBack -> {
                     navController.popBackStack()
-                    navController.navigate(NavRoute.HomeScreen)
                 }
-                is SaveTransactionUiEvent.ShowMessage -> {
-                    //Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is CommonUiEvent.ShowToast -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -70,7 +80,9 @@ fun SaveTransactionScreen(
             onDescriptionChanged = { viewModel.onDescriptionChanged(it) },
             onDateSelected = { viewModel.onDateSelected(it) },
             onDropdownToggle = { viewModel.toggleDropdown() },
-            onAddExpense = { viewModel.saveTransaction() }
+            onSaveExpense = { viewModel.saveTransaction() },
+            onToggleEdit = { viewModel.onToggleEdit() },
+            onBackClick = { viewModel.onBackClick() }
         )
     )
 }
@@ -106,6 +118,9 @@ fun SaveTransactionScreenContent(
         )
     }
 
+
+    val isFieldsEnabled = state.isNewTransaction or state.isEditing
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -119,11 +134,47 @@ fun SaveTransactionScreenContent(
                     .background(color = MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Add Expense",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+                IconButton(
+                    onClick = { callbacks.onBackClick() },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Cofnij",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+
+                if (!state.isNewTransaction) {
+                    IconButton(
+                        onClick = { callbacks.onToggleEdit() },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (state.isEditing) Icons.Default.Edit else Icons.Default.EditOff,
+                            contentDescription = "Edytuj",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
+                }
+
+                val title = when {
+                    state.isNewTransaction -> "Dodaj transakcję"
+                    state.isEditing -> "Edytuj transakcję"
+                    else -> "Szczegóły transakcji"
+                }
+
+                AnimatedContent(targetState = title, label = "TitleChange") { animatedTitle ->
+                    Text(
+                        text = animatedTitle,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
 
             Card(
@@ -151,7 +202,7 @@ fun SaveTransactionScreenContent(
                         types.forEach { (type, label) ->
                             val selected = state.transactionType == type
                             OutlinedButton(
-                                onClick = { callbacks.onTransactionTypeChanged(type) },
+                                onClick = { if(isFieldsEnabled) callbacks.onTransactionTypeChanged(type) },
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     containerColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
                                     contentColor = if (selected) Color.White else MaterialTheme.colorScheme.onSurface
@@ -169,7 +220,7 @@ fun SaveTransactionScreenContent(
                     ExposedDropdownMenuBox(
                         modifier = Modifier.fillMaxWidth(),
                         expanded = state.isDropdownExpanded,
-                        onExpandedChange = { callbacks.onDropdownToggle() }
+                        onExpandedChange = { if (isFieldsEnabled) callbacks.onDropdownToggle() }
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -193,7 +244,7 @@ fun SaveTransactionScreenContent(
                         }
                         ExposedDropdownMenu(
                             expanded = state.isDropdownExpanded,
-                            onDismissRequest = { callbacks.onDropdownToggle() }
+                            onDismissRequest = { callbacks.onDropdownToggle() },
                         ) {
                             TransactionCategory.entries.forEachIndexed { _, item ->
                                 DropdownMenuItem(
@@ -222,9 +273,10 @@ fun SaveTransactionScreenContent(
                     TextField(
                         value = state.amount,
                         onValueChange = { callbacks.onAmountChanged(it) },
+                        readOnly = !isFieldsEnabled,
                         label = { Text("Amount") },
                         placeholder = { Text("$") },
-                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -234,6 +286,7 @@ fun SaveTransactionScreenContent(
                     TextField(
                         value = state.description,
                         onValueChange = { callbacks.onDescriptionChanged(it) },
+                        readOnly = !isFieldsEnabled,
                         label = { Text("Description") },
                         placeholder = { Text("Add note..." ) },
                         modifier = Modifier.fillMaxWidth(),
@@ -247,7 +300,7 @@ fun SaveTransactionScreenContent(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { datePickerDialog.show() }
+                            .clickable { if (isFieldsEnabled) datePickerDialog.show() }
                     ) {
                         TextField(
                             value = formatDate(state.dateMillis),
@@ -262,12 +315,15 @@ fun SaveTransactionScreenContent(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+
                     // Save Button
-                    Button(
-                        onClick = { callbacks.onAddExpense() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Add Expense")
+                    AnimatedVisibility(visible = isFieldsEnabled) {
+                        Button(
+                            onClick = { callbacks.onSaveExpense() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Zapisz transakcję")
+                        }
                     }
                 }
             }
@@ -287,7 +343,9 @@ fun SaveTransactionScreenPreview() {
             onDescriptionChanged = { },
             onDateSelected = { },
             onDropdownToggle = { },
-            onAddExpense = { }
+            onSaveExpense = { },
+            onToggleEdit = { },
+            onBackClick = { }
         )
     )
 }
