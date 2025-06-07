@@ -4,9 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HomeMax
+import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -15,6 +17,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.cashflow.ui.screens.currency.CurrencyScreen
 import com.example.cashflow.ui.screens.home.HomeScreen
 import com.example.cashflow.ui.screens.login.LoginScreen
 import com.example.cashflow.ui.screens.register.RegisterScreen
@@ -28,6 +31,7 @@ fun MainNavigation(navController: NavHostController, startDestination: NavRoute)
 
     // Ekrany z wyświetlanym BottomBar
     val bottomBarRoutes = listOf(
+        NavRoute.CurrencyScreen::class.qualifiedName,
         NavRoute.HomeScreen::class.qualifiedName,
         NavRoute.TransactionsScreen::class.qualifiedName
     )
@@ -40,6 +44,12 @@ fun MainNavigation(navController: NavHostController, startDestination: NavRoute)
                 NavBottomBar(
                     navController = navController,
                     items = listOf(
+                        NavItem(
+                            title = "Currency",
+                            selectedIcon = Icons.Filled.CurrencyExchange,
+                            unselectedIcon = Icons.Outlined.CurrencyExchange,
+                            route = NavRoute.CurrencyScreen
+                        ),
                         NavItem(
                             title = "Home",
                             selectedIcon = Icons.Default.Home,
@@ -69,6 +79,9 @@ fun MainNavigation(navController: NavHostController, startDestination: NavRoute)
             }
             composable<NavRoute.TransactionsScreen> {
                 TransactionsScreen(navController = navController)
+            }
+            composable<NavRoute.CurrencyScreen> {
+                CurrencyScreen(navController = navController)
             }
             composable<NavRoute.SaveTransactionScreen> {
                 SaveTransactionScreen(navController = navController)
