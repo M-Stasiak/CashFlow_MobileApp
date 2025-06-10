@@ -16,8 +16,8 @@ class ShakeDetector(
     private val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
     private var lastShakeTime: Long = 0
-    private val shakeThreshold = 12f   // dostosuj jeśli trzeba
-    private val shakeCooldown = 1000L  // 1 sekunda ochrony przed spamem
+    private val shakeThreshold = 12f
+    private val shakeCooldown = 1000L
     private var isRunning = false
 
     fun start() {

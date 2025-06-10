@@ -159,11 +159,3 @@ class SaveTransactionViewModel @Inject constructor(
         }
     }
 }
-
-/*
-fun extractAmount(text: String): String? {
-        val regex = Regex("""(?i)(suma|razem|total)[^\d]*(\d+[.,]\d{2})""")
-        val match = regex.find(text)
-        return match?.groupValues?.get(2)
-    }
- */
