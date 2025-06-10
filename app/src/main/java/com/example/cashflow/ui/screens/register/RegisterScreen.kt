@@ -81,7 +81,6 @@ fun RegisterScreenContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

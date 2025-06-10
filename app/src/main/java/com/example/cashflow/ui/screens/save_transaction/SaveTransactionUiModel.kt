@@ -1,5 +1,6 @@
 package com.example.cashflow.ui.screens.save_transaction
 
+import android.graphics.Bitmap
 import com.example.cashflow.data.local.model.TransactionCategory
 import com.example.cashflow.data.local.model.TransactionType
 import com.example.cashflow.ui.core.AppUiEvent
@@ -26,6 +27,7 @@ data class SaveTransactionUiCallbacks(
     val onDescriptionChanged: (String) -> Unit,
     val onDateSelected: (Long) -> Unit,
     val onDropdownToggle: () -> Unit,
+    val onReceiptAnalyze: (Bitmap) -> Unit,
     val onSaveExpense: () -> Unit,
     val onToggleEdit: () -> Unit,
     val onBackClick: () -> Unit

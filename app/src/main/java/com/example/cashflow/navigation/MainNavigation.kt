@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HomeMax
 import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -53,7 +54,7 @@ fun MainNavigation(navController: NavHostController, startDestination: NavRoute)
                         NavItem(
                             title = "Home",
                             selectedIcon = Icons.Default.Home,
-                            unselectedIcon = Icons.Default.HomeMax,
+                            unselectedIcon = Icons.Outlined.Home,
                             route = NavRoute.HomeScreen
                         ),
                         NavItem(

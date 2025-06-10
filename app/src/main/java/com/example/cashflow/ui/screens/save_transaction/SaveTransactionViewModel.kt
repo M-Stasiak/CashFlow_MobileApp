@@ -1,5 +1,9 @@
 package com.example.cashflow.ui.screens.save_transaction
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,7 +16,11 @@ import com.example.cashflow.data.repository.TransactionRepository
 import com.example.cashflow.navigation.NavRoute
 import com.example.cashflow.ui.core.AppUiEvent
 import com.example.cashflow.ui.core.CommonUiEvent
+import com.example.cashflow.ui.core.TextRecognitionManager
 import com.example.cashflow.ui.screens.register.RegisterUiState
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -34,6 +42,34 @@ class SaveTransactionViewModel @Inject constructor(
 
     private val user = sessionRepository.currentUser.value
         ?: throw IllegalStateException("User not logged in")
+
+    fun analyzeReceipt(bitmap: Bitmap) {
+        viewModelScope.launch {
+            TextRecognitionManager.recognizeTextFromBitMap(
+                bitmap,
+                onSuccess = { s ->
+                    viewModelScope.launch {
+                        val regex = Regex("""\d+[.,]\d+""")
+                        val match = regex.find(s)
+                        val amount = match?.value
+                        if (amount != null) {
+                            val normalizedAmount = amount.replace(",", ".")
+                            onAmountChanged(normalizedAmount)
+                            _uiEvent.emit(CommonUiEvent.ShowToast("Poprawnie zeskanowano kwotę"))
+                        } else {
+                            _uiEvent.emit(CommonUiEvent.ShowToast("Nie znaleziono kwoty"))
+                        }
+                        Log.d("TEXT", s)
+                    }
+                },
+                onFailure = {
+                    viewModelScope.launch {
+                        _uiEvent.emit(CommonUiEvent.ShowToast("Błąd skanowania: $it"))
+                    }
+                }
+            )
+        }
+    }
 
     init {
         args.transactionId?.let { transactionId ->
@@ -123,3 +159,11 @@ class SaveTransactionViewModel @Inject constructor(
         }
     }
 }
+
+/*
+fun extractAmount(text: String): String? {
+        val regex = Regex("""(?i)(suma|razem|total)[^\d]*(\d+[.,]\d{2})""")
+        val match = regex.find(text)
+        return match?.groupValues?.get(2)
+    }
+ */

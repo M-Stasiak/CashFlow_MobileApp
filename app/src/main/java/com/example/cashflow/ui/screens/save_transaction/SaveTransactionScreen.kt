@@ -1,11 +1,16 @@
 package com.example.cashflow.ui.screens.save_transaction
 
 import android.app.DatePickerDialog
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.widget.DatePicker
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -34,16 +39,19 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.cashflow.data.local.model.TransactionCategory
 import com.example.cashflow.data.local.model.TransactionType
 import com.example.cashflow.navigation.NavRoute
+import com.example.cashflow.ui.components.CameraButton
 import com.example.cashflow.ui.components.getTransactionCategoryUiByEnum
 import com.example.cashflow.ui.core.CommonUiEvent
 import com.example.cashflow.util.formatDate
@@ -80,6 +88,7 @@ fun SaveTransactionScreen(
             onDescriptionChanged = { viewModel.onDescriptionChanged(it) },
             onDateSelected = { viewModel.onDateSelected(it) },
             onDropdownToggle = { viewModel.toggleDropdown() },
+            onReceiptAnalyze = { viewModel.analyzeReceipt(it) },
             onSaveExpense = { viewModel.saveTransaction() },
             onToggleEdit = { viewModel.onToggleEdit() },
             onBackClick = { viewModel.onBackClick() }
@@ -318,11 +327,19 @@ fun SaveTransactionScreenContent(
 
                     // Save Button
                     AnimatedVisibility(visible = isFieldsEnabled) {
-                        Button(
-                            onClick = { callbacks.onSaveExpense() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Zapisz transakcję")
+                        Column {
+                            CameraButton(
+                                modifier = Modifier.fillMaxWidth(),
+                                onImageCaptured = { bitmap ->
+                                    callbacks.onReceiptAnalyze(bitmap)
+                                }
+                            )
+                            Button(
+                                onClick = { callbacks.onSaveExpense() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Zapisz transakcję")
+                            }
                         }
                     }
                 }
@@ -343,6 +360,7 @@ fun SaveTransactionScreenPreview() {
             onDescriptionChanged = { },
             onDateSelected = { },
             onDropdownToggle = { },
+            onReceiptAnalyze = { },
             onSaveExpense = { },
             onToggleEdit = { },
             onBackClick = { }

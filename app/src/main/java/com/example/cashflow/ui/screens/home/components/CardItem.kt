@@ -45,7 +45,7 @@ fun CardItem(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Total Balance",
+                text = "Całkowity Balans",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White)
             Spacer(modifier = Modifier.size(4.dp))
@@ -65,13 +65,13 @@ fun CardItem(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Filled.ArrowCircleDown,
-                            contentDescription = "Income",
+                            contentDescription = "Dochód",
                             tint = Color.White,
                             modifier = Modifier.height(18.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Income",
+                            text = "Przychód",
                             color = Color.White,
                             modifier = Modifier.height(18.dp)
                         )
@@ -94,7 +94,7 @@ fun CardItem(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Income",
+                            text = "Wydatek",
                             color = Color.White,
                             modifier = Modifier.height(18.dp)
                         )

@@ -133,8 +133,8 @@ fun HomeScreenContent(
             .fillMaxSize()
             .padding(16.dp)
         ) {
-            Text("Good Afternoon", color = Color.Gray)
-            Text("CodeWithFK", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("Dzień dobry", color = Color.Gray)
+            Text("CashFlow", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
 
             CardItem(
                 balance = animatedBalance,
@@ -142,7 +142,7 @@ fun HomeScreenContent(
                 expense = animatedExpense
             )
 
-            Text("Recent Transactions", style = MaterialTheme.typography.titleMedium)
+            Text("Ostatnie transakcje", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             TransactionList(
                 transactions = state.transactions,
